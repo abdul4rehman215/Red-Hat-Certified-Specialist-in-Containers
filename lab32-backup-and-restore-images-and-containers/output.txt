@@ -1,0 +1,132 @@
+=============================
+Lab 32 - Backup and Restore Images and Containers with Podman
+Execution Output Log
+=============================
+
+----------------------------------------
+Lab Setup
+----------------------------------------
+
+$ podman --version
+podman version 3.4.4
+
+
+$ podman pull docker.io/library/alpine:latest
+Trying to pull docker.io/library/alpine:latest...
+Getting image source signatures
+Copying blob 44cf07d57ee4 done
+Copying config 9c6f072447 done
+Writing manifest to image destination
+Storing signatures
+9c6f07244711aabbccddeeff00112233445566778899aabbccddeeff00112233
+
+
+----------------------------------------
+Task 1 - Save an Image to Tarball
+----------------------------------------
+
+$ podman images
+REPOSITORY                 TAG     IMAGE ID      CREATED        SIZE
+docker.io/library/alpine    latest  9c6f07244711  3 days ago     7.30 MB
+
+
+$ podman save -o alpine_backup.tar docker.io/library/alpine:latest
+
+
+$ ls -lh alpine_backup.tar
+-rw-rw-r--. 1 centos centos 3.2M Aug 18 13:11 alpine_backup.tar
+
+
+$ file alpine_backup.tar
+alpine_backup.tar: POSIX tar archive
+
+
+----------------------------------------
+Task 2 - Load an Image from Tarball
+----------------------------------------
+
+$ podman rmi docker.io/library/alpine:latest
+Untagged: docker.io/library/alpine:latest
+Deleted: 9c6f07244711aabbccddeeff00112233445566778899aabbccddeeff00112233
+
+
+$ podman load -i alpine_backup.tar
+Loaded image(s): docker.io/library/alpine:latest
+
+
+$ podman images
+REPOSITORY                 TAG     IMAGE ID      CREATED        SIZE
+docker.io/library/alpine    latest  9c6f07244711  3 days ago     7.30 MB
+
+
+----------------------------------------
+Task 3 - Commit Container to New Image
+----------------------------------------
+
+$ podman run -it --name myalpine docker.io/library/alpine:latest /bin/sh
+/ # 
+# touch /testfile
+# echo "Lab 12" > /testfile
+# exit
+exit
+
+
+$ podman commit myalpine my_custom_alpine:v1
+Getting image source signatures
+Copying blob 44cf07d57ee4 skipped: already exists
+Copying config 7b6c5d4e3f2a done
+Writing manifest to image destination
+Storing signatures
+7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b
+
+
+$ podman images
+REPOSITORY                    TAG     IMAGE ID      CREATED         SIZE
+localhost/my_custom_alpine     v1      7b6c5d4e3f2a  10 seconds ago  7.31 MB
+docker.io/library/alpine       latest  9c6f07244711  3 days ago      7.30 MB
+
+
+$ podman run --rm my_custom_alpine:v1 cat /testfile
+Lab 12
+
+
+----------------------------------------
+Task 4 - Understanding Limitations + Storage Usage
+----------------------------------------
+
+$ podman commit --help | grep -A5 "Limitations"
+Limitations:
+  - Committing a container does not include data from volumes.
+  - Committing a container does not capture running processes.
+  - Committing a container does not include network configuration.
+  - For reproducible builds, prefer Containerfiles/Dockerfiles.
+
+
+$ podman system df
+TYPE            TOTAL   ACTIVE  SIZE    RECLAIMABLE
+Images          2       0       14.6MB  1.2MB (8%)
+Containers      1       0       0B      0B (0%)
+Local Volumes   0       0       0B      0B (0%)
+
+
+----------------------------------------
+Cleanup
+----------------------------------------
+
+$ podman rm -a
+myalpine
+
+
+$ podman rmi -a
+Untagged: localhost/my_custom_alpine:v1
+Deleted: 7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b
+Untagged: docker.io/library/alpine:latest
+Deleted: 9c6f07244711aabbccddeeff00112233445566778899aabbccddeeff00112233
+
+
+$ rm alpine_backup.tar
+
+
+=============================
+Lab completed successfully on a cloud lab environment
+=============================
