@@ -16,9 +16,9 @@ Build errors like:
 
 ### ✅ Fix
 - Confirm you are in the correct directory:
-  ```bash
+```bash
   pwd
-````
+```
 
 * Confirm file exists:
 
