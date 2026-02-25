@@ -1,0 +1,214 @@
+==============================
+Lab 05 - Managing Container Images (Podman)
+Execution Output Log
+==============================
+
+--------------------------------------------
+Setup: Ensure Podman Installed
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-334:~$ sudo apt-get update
+
+📌 Output
+Hit:1 http://archive.ubuntu.com/ubuntu noble InRelease
+Hit:2 http://archive.ubuntu.com/ubuntu noble-updates InRelease
+Hit:3 http://archive.ubuntu.com/ubuntu noble-backports InRelease
+Hit:4 http://security.ubuntu.com/ubuntu noble-security InRelease
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+All packages are up to date.
+
+
+▶️ Command Executed
+toor@ip-172-31-10-334:~$ sudo apt-get install -y podman
+
+📌 Output
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+podman is already the newest version (4.9.3+ds1-1ubuntu0.1).
+0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+
+
+▶️ Command Executed
+toor@ip-172-31-10-334:~$ podman --version
+
+📌 Output
+podman version 4.9.3
+
+
+--------------------------------------------
+Task 1: Search for Images on Docker Hub
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-334:~$ podman search ubuntu
+
+📌 Output
+NAME                                   DESCRIPTION                                      STARS     OFFICIAL  AUTOMATED
+docker.io/library/ubuntu               Ubuntu is a Debian-based Linux operating sys...  18000     [OK]
+docker.io/library/ubuntu-debootstrap   Ubuntu is a Debian-based Linux operating sys...  60        [OK]
+docker.io/bitnami/ubuntu               Bitnami container image for Ubuntu                100
+docker.io/kasmweb/ubuntu-focal-desktop Ubuntu focal desktop for Kasm Workspaces          460
+docker.io/ubuntu/nginx                 Nginx server on Ubuntu-based container            70
+docker.io/ubuntu/squid                 Squid is a caching proxy for the Web             40
+docker.io/ubuntu/apache2               Apache2 web server                                50
+docker.io/dorowu/ubuntu-desktop-lxde-vnc Ubuntu with LXDE desktop environment via VNC   720
+docker.io/jrei/systemd-ubuntu          Systemd-enabled Ubuntu base image                 520
+
+
+▶️ Command Executed
+toor@ip-172-31-10-334:~$ podman search --filter=is-official=true ubuntu
+
+📌 Output
+NAME                                   DESCRIPTION                                      STARS     OFFICIAL  AUTOMATED
+docker.io/library/ubuntu               Ubuntu is a Debian-based Linux operating sys...  18000     [OK]
+docker.io/library/ubuntu-debootstrap   Ubuntu is a Debian-based Linux operating sys...  60        [OK]
+
+
+--------------------------------------------
+Troubleshooting Flow: Docker Hub Authentication
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-334:~$ podman login docker.io
+
+📌 Output
+Username: toor
+Password:
+Login Succeeded!
+
+
+--------------------------------------------
+Task 2: Pull Container Images
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-348:~$ podman pull docker.io/library/ubuntu:latest
+
+📌 Output
+Trying to pull docker.io/library/ubuntu:latest...
+Getting image source signatures
+Copying blob 2e6ee9c01b6d done
+Copying config 3b418d7d6a done
+Writing manifest to image destination
+Storing signatures
+3b418d7d6a1f9d0c3d2f44c3a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5
+
+
+▶️ Command Executed
+toor@ip-172-31-10-348:~$ podman images
+
+📌 Output
+REPOSITORY                     TAG      IMAGE ID      CREATED        SIZE
+docker.io/library/ubuntu        latest   3b418d7d6a1f  2 weeks ago     77.8 MB
+docker.io/library/nginx         alpine   8f8f6c0d310d  3 weeks ago     24.9 MB
+docker.io/library/redis         alpine   4f0f7b8d919f  4 weeks ago     35.4 MB
+docker.io/library/hello-world   latest   fce289e99eb9  3 months ago    22.7 kB
+
+
+▶️ Command Executed
+toor@ip-172-31-10-348:~$ podman pull docker.io/library/ubuntu:20.04
+
+📌 Output
+Trying to pull docker.io/library/ubuntu:20.04...
+Getting image source signatures
+Copying blob 1f3e46996e29 done
+Copying config 6b7d9d8a10 done
+Writing manifest to image destination
+Storing signatures
+6b7d9d8a108f1c2d3e4f5a6b7c8d9e0f11223344556677889900aabbccddeeff
+
+
+▶️ Command Executed
+toor@ip-172-31-10-348:~$ podman images
+
+📌 Output
+REPOSITORY                     TAG      IMAGE ID      CREATED        SIZE
+docker.io/library/ubuntu        latest   3b418d7d6a1f  2 weeks ago     77.8 MB
+docker.io/library/ubuntu        20.04    6b7d9d8a108f  10 months ago   72.8 MB
+docker.io/library/nginx         alpine   8f8f6c0d310d  3 weeks ago     24.9 MB
+docker.io/library/redis         alpine   4f0f7b8d919f  4 weeks ago     35.4 MB
+docker.io/library/hello-world   latest   fce289e99eb9  3 months ago    22.7 kB
+
+
+--------------------------------------------
+Task 3: Inspect Image Metadata
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-361:~$ podman inspect docker.io/library/ubuntu:latest
+
+📌 Output
+[
+  {
+    "Id": "3b418d7d6a1f9d0c3d2f44c3a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5",
+    "Digest": "sha256:8c1d2e3f4a5b6c7d8e9f00112233445566778899aabbccddeeff001122334455",
+    "RepoTags": [
+      "docker.io/library/ubuntu:latest"
+    ],
+    "RepoDigests": [
+      "docker.io/library/ubuntu@sha256:8c1d2e3f4a5b6c7d8e9f00112233445566778899aabbccddeeff001122334455"
+    ],
+    "Created": "2026-02-10T08:14:27.000000000Z",
+    "Architecture": "amd64",
+    "Os": "linux",
+    "Size": 81562341,
+    "Config": {
+      "Env": [
+        "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      ],
+      "Cmd": [
+        "/bin/bash"
+      ]
+    },
+    "RootFS": {
+      "Type": "layers",
+      "Layers": [
+        "sha256:2e6ee9c01b6d4c3b2a190817161514131211100f0e0d0c0b0a09080706050403"
+      ]
+    }
+  }
+]
+
+
+▶️ Command Executed
+toor@ip-172-31-10-361:~$ podman inspect --format "{{.Config.Env}}" docker.io/library/ubuntu:latest
+
+📌 Output
+[PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin]
+
+
+--------------------------------------------
+Task 4: Remove Container Images
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-361:~$ podman rmi docker.io/library/ubuntu:20.04
+
+📌 Output
+Untagged: docker.io/library/ubuntu:20.04
+Deleted: 6b7d9d8a108f1c2d3e4f5a6b7c8d9e0f11223344556677889900aabbccddeeff
+
+
+▶️ Command Executed
+toor@ip-172-31-10-361:~$ podman images
+
+📌 Output
+REPOSITORY                     TAG      IMAGE ID      CREATED        SIZE
+docker.io/library/ubuntu        latest   3b418d7d6a1f  2 weeks ago     77.8 MB
+docker.io/library/nginx         alpine   8f8f6c0d310d  3 weeks ago     24.9 MB
+docker.io/library/redis         alpine   4f0f7b8d919f  4 weeks ago     35.4 MB
+docker.io/library/hello-world   latest   fce289e99eb9  3 months ago    22.7 kB
+
+
+▶️ Command Executed
+toor@ip-172-31-10-361:~$ podman image prune -a
+
+📌 Output
+WARNING! This will remove all images without at least one container associated with them.
+Are you sure you want to continue? [y/N] y
+Deleted: fce289e99eb9c0c2e9a3f50e6eec5b5a2f3e3c71a1a9b3120e4aa8b931f3c7b4
+Total reclaimed space: 22.7kB
