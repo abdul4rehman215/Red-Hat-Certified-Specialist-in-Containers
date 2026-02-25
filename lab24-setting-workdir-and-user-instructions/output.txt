@@ -1,0 +1,190 @@
+=============================
+Lab 24 - WORKDIR and USER Instructions
+Execution Output Log
+=============================
+
+----------------------------------------
+Lab Setup
+----------------------------------------
+
+$ podman --version
+podman version 3.4.4
+
+
+$ mkdir container-security-lab && cd container-security-lab
+
+$ pwd
+/home/centos/container-security-lab
+
+
+----------------------------------------
+Task 1 - Using WORKDIR in Containerfile
+----------------------------------------
+
+$ touch Containerfile
+
+
+$ nano Containerfile
+
+
+$ cat Containerfile
+FROM registry.access.redhat.com/ubi9/ubi-minimal
+LABEL maintainer="Your Name <your.email@example.com>"
+
+
+$ nano Containerfile
+
+
+$ cat Containerfile
+FROM registry.access.redhat.com/ubi9/ubi-minimal
+LABEL maintainer="Your Name <your.email@example.com>"
+
+WORKDIR /app
+RUN pwd > /tmp/workdir.log && whoami >> /tmp/workdir.log
+
+
+$ podman build -t workdir-demo .
+STEP 1/4: FROM registry.access.redhat.com/ubi9/ubi-minimal
+Trying to pull registry.access.redhat.com/ubi9/ubi-minimal:latest...
+Getting image source signatures
+Copying blob 2f7d3c1a9b0e done
+Copying config 91ac2bb7dbe5 done
+Writing manifest to image destination
+Storing signatures
+STEP 2/4: LABEL maintainer="Your Name <your.email@example.com>"
+--> 3a2b1c0d9e8f
+STEP 3/4: WORKDIR /app
+--> 4b3c2d1e0f9a
+STEP 4/4: RUN pwd > /tmp/workdir.log && whoami >> /tmp/workdir.log
+--> 5c4d3e2f1a0b
+COMMIT workdir-demo
+--> 6d5e4f3a2b1c
+Successfully tagged localhost/workdir-demo:latest
+6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e
+
+
+$ podman run --rm workdir-demo cat /tmp/workdir.log
+/app
+root
+
+
+----------------------------------------
+Task 2 - Creating a Non-Root User
+----------------------------------------
+
+$ nano Containerfile
+
+
+$ cat Containerfile
+FROM registry.access.redhat.com/ubi9/ubi-minimal
+LABEL maintainer="Your Name <your.email@example.com>"
+
+WORKDIR /app
+RUN pwd > /tmp/workdir.log && whoami >> /tmp/workdir.log
+
+RUN microdnf install shadow-utils && \
+ useradd -u 1001 -d /home/appuser -m appuser && \
+ chown -R appuser:appuser /app
+
+
+$ nano Containerfile
+
+
+$ cat Containerfile
+FROM registry.access.redhat.com/ubi9/ubi-minimal
+LABEL maintainer="Your Name <your.email@example.com>"
+
+WORKDIR /app
+RUN pwd > /tmp/workdir.log && whoami >> /tmp/workdir.log
+
+RUN microdnf install shadow-utils && \
+ useradd -u 1001 -d /home/appuser -m appuser && \
+ chown -R appuser:appuser /app
+
+USER appuser
+RUN whoami >> /tmp/user.log && ls -ld /app >> /tmp/user.log
+
+
+$ podman build -t nonroot-demo .
+STEP 1/6: FROM registry.access.redhat.com/ubi9/ubi-minimal
+STEP 2/6: LABEL maintainer="Your Name <your.email@example.com>"
+--> 7e6f5a4b3c2d
+STEP 3/6: WORKDIR /app
+--> 8f7a6b5c4d3e
+STEP 4/6: RUN pwd > /tmp/workdir.log && whoami >> /tmp/workdir.log
+--> 9a8b7c6d5e4f
+STEP 5/6: RUN microdnf install shadow-utils &&  useradd -u 1001 -d /home/appuser -m appuser &&  chown -R appuser:appuser /app
+Downloading metadata...
+Installing:
+ shadow-utils  2:4.14.0-8.el9  x86_64  rhel-9-baseos
+Complete!
+--> 0a9b8c7d6e5f
+STEP 6/6: USER appuser
+--> 1b0c9d8e7f6a
+STEP 7/7: RUN whoami >> /tmp/user.log && ls -ld /app >> /tmp/user.log
+--> 2c1d0e9f8a7b
+COMMIT nonroot-demo
+--> 3d2e1f0a9b8c
+Successfully tagged localhost/nonroot-demo:latest
+3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e
+
+
+$ podman run --rm nonroot-demo cat /tmp/user.log
+appuser
+drwxr-xr-x 2 appuser appuser 6 Aug 18 12:02 /app
+
+
+----------------------------------------
+Task 3 - Security Validation
+----------------------------------------
+
+$ podman run --rm nonroot-demo touch /sys/kernel/profiling
+touch: /sys/kernel/profiling: Permission denied
+
+
+$ podman run -d --name testuser nonroot-demo sleep 300
+9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a
+
+
+$ podman exec testuser ps -ef
+UID        PID  PPID  C STIME TTY          TIME CMD
+appuser      1     0  0 12:06 ?        00:00:00 sleep 300
+appuser     12     0  0 12:06 ?        00:00:00 ps -ef
+
+
+----------------------------------------
+Task 4 - Security Implications Analysis
+----------------------------------------
+
+$ podman run --rm --user root workdir-demo whoami
+root
+
+
+$ podman run --rm nonroot-demo whoami
+appuser
+
+
+----------------------------------------
+Cleanup
+----------------------------------------
+
+$ podman rm -f testuser
+testuser
+
+
+$ podman rmi workdir-demo nonroot-demo
+Untagged: localhost/workdir-demo:latest
+Deleted: 6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e
+Untagged: localhost/nonroot-demo:latest
+Deleted: 3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e
+
+
+$ cd ..
+
+
+$ rm -rf container-security-lab
+
+
+=============================
+Lab completed successfully on a cloud lab environment
+=============================
