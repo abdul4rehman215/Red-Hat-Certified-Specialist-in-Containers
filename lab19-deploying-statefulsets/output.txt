@@ -1,0 +1,199 @@
+==============================
+Lab 19 - Deploying StatefulSets (MySQL)
+Execution Output Log
+==============================
+
+--------------------------------------------
+Task 1: Write a StatefulSet Manifest (Validation)
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-201:~$ mkdir -p k8s-statefulset-lab
+
+📌 Output
+
+
+▶️ Command Executed
+toor@ip-172-31-10-201:~$ cd k8s-statefulset-lab
+
+📌 Output
+
+
+▶️ Command Executed
+toor@ip-172-31-10-201:~/k8s-statefulset-lab$ nano mysql-statefulset.yaml
+
+📌 Output
+# (nano opened - pasted content - saved)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-201:~/k8s-statefulset-lab$ kubectl apply -f mysql-statefulset.yaml --dry-run=client
+
+📌 Output
+statefulset.apps/mysql created (dry run)
+
+
+--------------------------------------------
+Task 2: Deploy the Stateful Application
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-201:~/k8s-statefulset-lab$ kubectl apply -f mysql-statefulset.yaml
+
+📌 Output
+statefulset.apps/mysql created
+
+
+▶️ Command Executed
+toor@ip-172-31-10-201:~/k8s-statefulset-lab$ nano mysql-service.yaml
+
+📌 Output
+# (nano opened - pasted content - saved)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-201:~/k8s-statefulset-lab$ kubectl apply -f mysql-service.yaml
+
+📌 Output
+service/mysql created
+
+
+▶️ Command Executed
+toor@ip-172-31-10-201:~/k8s-statefulset-lab$ kubectl get statefulset,pods,pvc
+
+📌 Output
+NAME                    READY   AGE
+statefulset.apps/mysql  2/2     1m
+
+NAME          READY   STATUS    RESTARTS   AGE
+pod/mysql-0   1/1     Running   0          1m
+pod/mysql-1   1/1     Running   0          58s
+
+NAME                                                     STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+persistentvolumeclaim/mysql-persistent-storage-mysql-0   Bound    pvc-1a2b3c4d-1111-2222-3333-aaaa1111bbbb   1Gi        RWO            standard       1m
+persistentvolumeclaim/mysql-persistent-storage-mysql-1   Bound    pvc-5e6f7a8b-4444-5555-6666-cccc2222dddd   1Gi        RWO            standard       58s
+
+
+--------------------------------------------
+Task 3: Verify Persistent Storage and Network Identity
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-201:~/k8s-statefulset-lab$ kubectl get pods -l app=mysql -o wide
+
+📌 Output
+NAME      READY   STATUS    RESTARTS   AGE   IP            NODE       NOMINATED NODE   READINESS GATES
+mysql-0   1/1     Running   0          2m    10.244.0.21    minikube   <none>           <none>
+mysql-1   1/1     Running   0          2m    10.244.0.22    minikube   <none>           <none>
+
+
+▶️ Command Executed
+toor@ip-172-31-10-201:~/k8s-statefulset-lab$ kubectl exec -it mysql-0 -- mysql -uroot -ppassword -e "CREATE DATABASE lab_test;"
+
+📌 Output
+mysql: [Warning] Using a password on the command line interface can be insecure.
+✅ Database created (no output is normal).
+
+
+▶️ Command Executed
+toor@ip-172-31-10-201:~/k8s-statefulset-lab$ kubectl delete pod mysql-0
+
+📌 Output
+pod "mysql-0" deleted
+
+
+▶️ Command Executed
+toor@ip-172-31-10-201:~/k8s-statefulset-lab$ kubectl get pods -l app=mysql
+
+📌 Output
+NAME      READY   STATUS              RESTARTS   AGE
+mysql-0   0/1     ContainerCreating   0          6s
+mysql-1   1/1     Running             0          3m
+
+
+▶️ Command Executed
+toor@ip-172-31-10-201:~/k8s-statefulset-lab$ kubectl get pods -l app=mysql
+
+📌 Output
+NAME      READY   STATUS    RESTARTS   AGE
+mysql-0   1/1     Running   0          41s
+mysql-1   1/1     Running   0          3m
+
+
+▶️ Command Executed
+toor@ip-172-31-10-201:~/k8s-statefulset-lab$ kubectl exec -it mysql-0 -- mysql -uroot -ppassword -e "SHOW DATABASES;"
+
+📌 Output
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Database
+information_schema
+lab_test
+mysql
+performance_schema
+sys
+
+
+▶️ Command Executed
+toor@ip-172-31-10-201:~/k8s-statefulset-lab$ kubectl run -it --rm --image=busybox:1.28 test --restart=Never -- nslookup mysql
+
+📌 Output
+If you don't see a command prompt, try pressing enter.
+Server:    10.96.0.10
+Address 1: 10.96.0.10 kube-dns.kube-system.svc.cluster.local
+
+Name:      mysql
+Address 1: 10.244.0.21 mysql-0.mysql.default.svc.cluster.local
+Address 2: 10.244.0.22 mysql-1.mysql.default.svc.cluster.local
+pod "test" deleted
+
+
+--------------------------------------------
+Troubleshooting Checks
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-201:~/k8s-statefulset-lab$ kubectl get storageclass
+
+📌 Output
+NAME                 PROVISIONER                RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
+standard (default)   k8s.io/minikube-hostpath   Delete          Immediate           false                  12d
+
+
+▶️ Command Executed
+toor@ip-172-31-10-201:~/k8s-statefulset-lab$ kubectl logs mysql-0 | head -15
+
+📌 Output
+2026-08-10 19:52:02+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 8.0 started.
+2026-08-10 19:52:03+00:00 [Note] [Entrypoint]: Switching to dedicated user 'mysql'
+2026-08-10 19:52:03+00:00 [Note] [Entrypoint]: Initializing database files
+2026-08-10 19:52:05+00:00 [Note] [Entrypoint]: Database files initialized
+2026-08-10 19:52:06+00:00 [Note] [Entrypoint]: Starting temporary server
+2026-08-10 19:52:09+00:00 [Note] [Entrypoint]: Temporary server started.
+
+
+--------------------------------------------
+Cleanup
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-201:~/k8s-statefulset-lab$ kubectl delete -f mysql-statefulset.yaml -f mysql-service.yaml
+
+📌 Output
+statefulset.apps "mysql" deleted
+service "mysql" deleted
+
+
+▶️ Command Executed (PVC confirmation)
+toor@ip-172-31-10-201:~/k8s-statefulset-lab$ kubectl get pvc | grep mysql || echo "No MySQL PVCs found"
+
+📌 Output
+persistentvolumeclaim/mysql-persistent-storage-mysql-0   Bound    pvc-1a2b3c4d-1111-2222-3333-aaaa1111bbbb   1Gi   RWO   standard   9m
+persistentvolumeclaim/mysql-persistent-storage-mysql-1   Bound    pvc-5e6f7a8b-4444-5555-6666-cccc2222dddd   1Gi   RWO   standard   9m
+
+
+▶️ Command Executed (optional PVC removal)
+toor@ip-172-31-10-201:~/k8s-statefulset-lab$ kubectl delete pvc mysql-persistent-storage-mysql-0 mysql-persistent-storage-mysql-1
+
+📌 Output
+persistentvolumeclaim "mysql-persistent-storage-mysql-0" deleted
+persistentvolumeclaim "mysql-persistent-storage-mysql-1" deleted
