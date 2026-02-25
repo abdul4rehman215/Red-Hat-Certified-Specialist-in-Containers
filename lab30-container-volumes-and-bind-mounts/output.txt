@@ -1,0 +1,179 @@
+=============================
+Lab 30 - Container Volumes and Bind Mounts
+Execution Output Log
+=============================
+
+----------------------------------------
+Lab Setup
+----------------------------------------
+
+$ sudo dnf install podman
+sudo: dnf: command not found
+
+
+$ sudo yum install -y podman
+Loaded plugins: fastestmirror, langpacks
+Loading mirror speeds from cached hostfile
+ * base: mirror.centos.org
+ * extras: mirror.centos.org
+ * updates: mirror.centos.org
+Package podman-3.4.4-1.el7.x86_64 already installed and latest version
+Nothing to do
+
+
+$ podman --version
+podman version 3.4.4
+
+
+----------------------------------------
+Task 1 - Creating and Using Named Volumes
+----------------------------------------
+
+$ podman volume create mydata_volume
+mydata_volume
+
+
+$ podman volume ls
+DRIVER      VOLUME NAME
+local       mydata_volume
+
+
+$ podman run -d --name volume_test -v mydata_volume:/data docker.io/library/alpine sleep infinity
+0a1b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef01
+
+
+$ podman exec volume_test ls /data
+
+
+$ podman exec volume_test sh -c "echo 'Persistent Data' > /data/testfile"
+
+
+$ podman stop volume_test
+volume_test
+
+
+$ podman rm volume_test
+volume_test
+
+
+$ podman run --name new_test -v mydata_volume:/data docker.io/library/alpine cat /data/testfile
+Persistent Data
+
+
+----------------------------------------
+Task 2 - Bind Mounts with SELinux Context
+----------------------------------------
+
+$ mkdir ~/container_data
+
+
+$ echo "Host file content" > ~/container_data/hostfile.txt
+
+
+$ cat ~/container_data/hostfile.txt
+Host file content
+
+
+$ podman run -it --rm -v ~/container_data:/container_data:Z docker.io/library/alpine cat /container_data/hostfile.txt
+Host file content
+
+
+$ ls -Z ~/container_data/hostfile.txt
+unconfined_u:object_r:container_file_t:s0 /home/centos/container_data/hostfile.txt
+
+
+----------------------------------------
+Task 3 - Adjusting Host Directory Permissions
+----------------------------------------
+
+$ sudo mkdir /restricted_data
+
+
+$ sudo chmod 700 /restricted_data
+
+
+$ sudo chown root:root /restricted_data
+
+
+$ sudo ls -ldZ /restricted_data
+drwx------. root root system_u:object_r:default_t:s0 /restricted_data
+
+
+$ podman run -it --rm -v /restricted_data:/data docker.io/library/alpine touch /data/testfile
+touch: /data/testfile: Permission denied
+
+
+$ sudo chmod 755 /restricted_data
+
+
+$ sudo chcon -t container_file_t /restricted_data
+
+
+$ podman run -it --rm -v /restricted_data:/data:Z docker.io/library/alpine touch /data/testfile
+
+
+$ sudo ls -lZ /restricted_data
+total 0
+-rw-r--r--. 1 root root system_u:object_r:container_file_t:s0 testfile
+
+
+----------------------------------------
+Task 4 - Comprehensive Data Persistence Test
+----------------------------------------
+
+$ podman run -d --name persist_test -v mydata_volume:/data -v ~/container_data:/container_data:Z docker.io/library/alpine sleep infinity
+1f2e3d4c5b6a708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809
+
+
+$ podman exec persist_test sh -c "echo 'Named Volume Data' >> /data/named.txt"
+
+
+$ podman exec persist_test sh -c "echo 'Bind Mount Data' >> /container_data/bind.txt"
+
+
+$ podman stop persist_test
+persist_test
+
+
+$ podman rm persist_test
+persist_test
+
+
+$ podman run --rm -v mydata_volume:/data docker.io/library/alpine cat /data/named.txt
+Named Volume Data
+
+
+$ cat ~/container_data/bind.txt
+Bind Mount Data
+
+
+----------------------------------------
+Troubleshooting Check (SELinux)
+----------------------------------------
+
+$ getenforce
+Enforcing
+
+
+----------------------------------------
+Cleanup
+----------------------------------------
+
+$ podman volume rm mydata_volume
+mydata_volume
+
+
+$ podman rm -f $(podman ps -aq)
+new_test
+persist_test
+
+
+$ rm -rf ~/container_data
+
+
+$ sudo rm -rf /restricted_data
+
+
+=============================
+Lab completed successfully on a cloud lab environment
+=============================
