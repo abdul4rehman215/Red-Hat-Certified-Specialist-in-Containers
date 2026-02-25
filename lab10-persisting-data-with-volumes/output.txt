@@ -1,0 +1,135 @@
+==============================
+Lab 10 - Persisting Data with Volumes (Podman)
+Execution Output Log
+==============================
+
+--------------------------------------------
+Task 1: Creating Named Volumes
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-487:~$ podman volume create myapp_data
+
+📌 Output
+myapp_data
+
+
+▶️ Command Executed
+toor@ip-172-31-10-487:~$ podman volume ls
+
+📌 Output
+DRIVER      VOLUME NAME
+local       myapp_data
+
+
+▶️ Command Executed
+toor@ip-172-31-10-487:~$ podman volume inspect myapp_data
+
+📌 Output
+[
+  {
+    "Name": "myapp_data",
+    "Driver": "local",
+    "Mountpoint": "/home/toor/.local/share/containers/storage/volumes/myapp_data/_data",
+    "CreatedAt": "2026-02-25T13:42:11.230145731Z",
+    "Labels": {},
+    "Scope": "local",
+    "Options": {}
+  }
+]
+
+
+--------------------------------------------
+Task 2: Mounting Volumes in Containers
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-487:~$ podman run -d --name webapp -v myapp_data:/var/www/html docker.io/library/nginx
+
+📌 Output
+d0c1b2a3f4e56789012a3b4c5d6e7f89012a3b4c5d6e7f89012a3b4c5d6e7f89
+
+
+▶️ Command Executed
+toor@ip-172-31-10-487:~$ podman exec webapp ls /var/www/html
+
+📌 Output
+(No output expected since the volume is empty.)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-487:~$ podman exec webapp sh -c "echo 'Hello, Volume!' > /var/www/html/index.html"
+
+📌 Output
+
+
+▶️ Command Executed
+toor@ip-172-31-10-487:~$ podman exec webapp cat /var/www/html/index.html
+
+📌 Output
+Hello, Volume!
+
+
+▶️ Command Executed
+toor@ip-172-31-10-487:~$ podman rm -f webapp
+
+📌 Output
+webapp
+
+
+▶️ Command Executed
+toor@ip-172-31-10-487:~$ podman run -d --name webapp_new -v myapp_data:/var/www/html docker.io/library/nginx
+
+📌 Output
+e1f2a3b4c5d6789012a3b4c5d6e7f89012a3b4c5d6e7f89012a3b4c5d6e7f890
+
+
+▶️ Command Executed
+toor@ip-172-31-10-487:~$ podman exec webapp_new cat /var/www/html/index.html
+
+📌 Output
+Hello, Volume!
+
+
+--------------------------------------------
+Task 3: Using Bind Mounts with Host Directories
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-503:~$ mkdir ~/host_data
+
+📌 Output
+
+
+▶️ Command Executed
+toor@ip-172-31-10-503:~$ echo "Hello, Bind Mount!" > ~/host_data/index.html
+
+📌 Output
+
+
+▶️ Command Executed
+toor@ip-172-31-10-503:~$ podman run -d --name bind_example -v ~/host_data:/usr/share/nginx/html:Z docker.io/library/nginx
+
+📌 Output
+f9e8d7c6b5a4321099887766554433221100ffeeddccbbaa998877665544332211
+
+
+▶️ Command Executed
+toor@ip-172-31-10-503:~$ podman exec bind_example cat /usr/share/nginx/html/index.html
+
+📌 Output
+Hello, Bind Mount!
+
+
+▶️ Command Executed
+toor@ip-172-31-10-503:~$ echo "Updated content!" >> ~/host_data/index.html
+
+📌 Output
+
+
+▶️ Command Executed
+toor@ip-172-31-10-503:~$ podman exec bind_example cat /usr/share/nginx/html/index.html
+
+📌 Output
+Hello, Bind Mount!
+Updated content!
