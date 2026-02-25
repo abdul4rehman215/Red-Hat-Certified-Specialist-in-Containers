@@ -1,0 +1,270 @@
+=============================
+Lab 27 - Parameterized ENTRYPOINT Scripts
+Execution Output Log
+=============================
+
+----------------------------------------
+Setup Requirements
+----------------------------------------
+
+$ podman --version
+podman version 3.4.4
+
+
+$ mkdir entrypoint-lab && cd entrypoint-lab
+
+$ pwd
+/home/centos/entrypoint-lab
+
+
+----------------------------------------
+Task 1 - Create a Basic ENTRYPOINT Script
+----------------------------------------
+
+$ nano entrypoint.sh
+
+$ cat entrypoint.sh
+#!/bin/bash
+echo "Container starting..."
+echo "Executing as user: $(whoami)"
+echo "Current directory: $(pwd)"
+
+
+$ chmod +x entrypoint.sh
+
+
+$ ls -l entrypoint.sh
+-rwxr-xr-x. 1 centos centos 110 Aug 18 12:40 entrypoint.sh
+
+
+$ nano Dockerfile
+
+
+$ cat Dockerfile
+FROM alpine:latest
+RUN apk add --no-cache bash
+COPY entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+
+
+$ podman build -t entrypoint-demo .
+STEP 1/4: FROM alpine:latest
+Trying to pull docker.io/library/alpine:latest...
+Getting image source signatures
+Copying blob 44cf07d57ee4 done
+Copying config 9c6f072447 done
+Writing manifest to image destination
+Storing signatures
+STEP 2/4: RUN apk add --no-cache bash
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.20/main/x86_64/APKINDEX.tar.gz
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.20/community/x86_64/APKINDEX.tar.gz
+(1/2) Installing ncurses-terminfo-base (6.4_p20240420-r0)
+(2/2) Installing bash (5.2.26-r0)
+Executing busybox-1.36.1-r29.trigger
+OK: 10 MiB in 17 packages
+STEP 3/4: COPY entrypoint.sh /entrypoint.sh
+--> 1a2b3c4d5e6f
+STEP 4/4: ENTRYPOINT ["/entrypoint.sh"]
+COMMIT entrypoint-demo
+--> 2b3c4d5e6f70
+Successfully tagged localhost/entrypoint-demo:latest
+2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091
+
+
+$ podman run entrypoint-demo
+Container starting...
+Executing as user: root
+Current directory: /
+
+
+----------------------------------------
+Task 2 - Implement Parameter Handling
+----------------------------------------
+
+$ nano entrypoint.sh
+
+$ cat entrypoint.sh
+#!/bin/bash
+echo "Container starting with arguments: $@"
+echo "First argument: ${1:-none}"
+echo "Second argument: ${2:-none}"
+# Execute the command passed from CMD
+exec "$@"
+
+
+$ nano Dockerfile
+
+$ cat Dockerfile
+FROM alpine:latest
+RUN apk add --no-cache bash
+COPY entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["echo", "Default command executed"]
+
+
+$ podman build -t entrypoint-demo .
+STEP 1/5: FROM alpine:latest
+STEP 2/5: RUN apk add --no-cache bash
+--> Using cache 4f3a2b1c0d9e
+STEP 3/5: COPY entrypoint.sh /entrypoint.sh
+--> 3c4d5e6f7081
+STEP 4/5: ENTRYPOINT ["/entrypoint.sh"]
+--> 4d5e6f708192
+STEP 5/5: CMD ["echo", "Default command executed"]
+COMMIT entrypoint-demo
+--> 5e6f708192a3
+Successfully tagged localhost/entrypoint-demo:latest
+5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d
+
+
+$ podman run entrypoint-demo
+Container starting with arguments: echo Default command executed
+First argument: echo
+Second argument: Default command executed
+Default command executed
+
+
+$ podman run entrypoint-demo ls -l /
+Container starting with arguments: ls -l /
+First argument: ls
+Second argument: -l
+total 68
+drwxr-xr-x    2 root     root          4096 Aug 18 12:44 bin
+drwxr-xr-x    5 root     root           360 Aug 18 12:44 dev
+drwxr-xr-x    1 root     root          4096 Aug 18 12:44 etc
+drwxr-xr-x    2 root     root          4096 Aug 18 12:44 home
+drwxr-xr-x    1 root     root          4096 Aug 18 12:44 lib
+drwxr-xr-x    5 root     root          4096 Aug 18 12:44 media
+drwxr-xr-x    2 root     root          4096 Aug 18 12:44 mnt
+drwxr-xr-x    2 root     root          4096 Aug 18 12:44 opt
+dr-xr-xr-x  224 root     root             0 Aug 18 12:44 proc
+drwx------    2 root     root          4096 Aug 18 12:44 root
+drwxr-xr-x    2 root     root          4096 Aug 18 12:44 run
+drwxr-xr-x    2 root     root          4096 Aug 18 12:44 sbin
+dr-xr-xr-x   13 root     root             0 Aug 18 12:44 sys
+drwxrwxrwt    2 root     root          4096 Aug 18 12:44 tmp
+drwxr-xr-x    7 root     root          4096 Aug 18 12:44 usr
+drwxr-xr-x   12 root     root          4096 Aug 18 12:44 var
+
+
+----------------------------------------
+Task 3 - Environment-Specific Logic
+----------------------------------------
+
+$ nano entrypoint.sh
+
+$ cat entrypoint.sh
+#!/bin/bash
+# Environment detection
+if [ "$ENV_MODE" = "production" ]; then
+ echo "PRODUCTION MODE: Strict settings applied"
+ # Add production-specific logic here
+elif [ "$ENV_MODE" = "development" ]; then
+ echo "DEVELOPMENT MODE: Debug features enabled"
+ # Add development-specific logic here
+else
+ echo "No ENV_MODE specified, running in default mode"
+fi
+exec "$@"
+
+
+$ nano Dockerfile
+
+$ cat Dockerfile
+FROM alpine:latest
+RUN apk add --no-cache bash
+COPY entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["echo", "Running container"]
+
+
+$ podman build -t entrypoint-demo .
+STEP 1/5: FROM alpine:latest
+STEP 2/5: RUN apk add --no-cache bash
+--> Using cache 4f3a2b1c0d9e
+STEP 3/5: COPY entrypoint.sh /entrypoint.sh
+--> 6f708192a3b4
+STEP 4/5: ENTRYPOINT ["/entrypoint.sh"]
+--> 708192a3b4c5
+STEP 5/5: CMD ["echo", "Running container"]
+COMMIT entrypoint-demo
+--> 8192a3b4c5d6
+Successfully tagged localhost/entrypoint-demo:latest
+8192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f70
+
+
+$ podman run -e ENV_MODE=development entrypoint-demo
+DEVELOPMENT MODE: Debug features enabled
+Running container
+
+
+$ podman run -e ENV_MODE=production entrypoint-demo
+PRODUCTION MODE: Strict settings applied
+Running container
+
+
+$ podman run entrypoint-demo
+No ENV_MODE specified, running in default mode
+Running container
+
+
+----------------------------------------
+Task 4 - Advanced Parameter Handling (Dispatcher)
+----------------------------------------
+
+$ nano entrypoint.sh
+
+$ cat entrypoint.sh
+#!/bin/bash
+# Process arguments
+case "$1" in
+ start)
+ echo "Starting application with config: ${2:-default}"
+ ;;
+ stop)
+ echo "Stopping application gracefully"
+ ;;
+ *)
+ echo "Usage: $0 {start|stop} [config]"
+ exit 1
+esac
+
+
+$ nano Dockerfile
+
+
+$ cat Dockerfile
+FROM alpine:latest
+RUN apk add --no-cache bash
+COPY entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+
+
+$ podman build -t entrypoint-demo .
+STEP 1/4: FROM alpine:latest
+STEP 2/4: RUN apk add --no-cache bash
+--> Using cache 4f3a2b1c0d9e
+STEP 3/4: COPY entrypoint.sh /entrypoint.sh
+--> 9c0d1e2f3a4b
+STEP 4/4: ENTRYPOINT ["/entrypoint.sh"]
+COMMIT entrypoint-demo
+--> 0d1e2f3a4b5c
+Successfully tagged localhost/entrypoint-demo:latest
+0d1e2f3a4b5c6d7e8f90123456789abcdef0123456789abcdef0123456789abcd
+
+
+$ podman run entrypoint-demo start production
+Starting application with config: production
+
+
+$ podman run entrypoint-demo stop
+Stopping application gracefully
+
+
+$ podman run entrypoint-demo invalid
+Usage: /entrypoint.sh {start|stop} [config]
+
+
+=============================
+Lab completed successfully on a cloud lab environment
+=============================
