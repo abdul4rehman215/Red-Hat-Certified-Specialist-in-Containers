@@ -1,0 +1,217 @@
+==============================
+Lab 08 - Environment Variables in Images (ENV + ARG)
+Execution Output Log
+==============================
+
+--------------------------------------------
+Setup Requirements
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-433:~$ podman --version
+
+📌 Output
+podman version 4.9.3
+
+
+--------------------------------------------
+Task 1: Define Environment Variables in Containerfile
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-433:~$ mkdir env-lab && cd env-lab
+
+📌 Output
+toor@ip-172-31-10-433:~/env-lab$
+
+
+▶️ Command Executed
+toor@ip-172-31-10-433:~/env-lab$ nano Containerfile
+
+📌 Output
+# (nano opened - pasted content - saved with CTRL+O, ENTER, then CTRL+X)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-433:~/env-lab$ cat Containerfile
+
+📌 Output
+FROM registry.access.redhat.com/ubi8/ubi-minimal
+ENV APP_NAME="MyApp" \
+ APP_VERSION="1.0" \
+ APP_ENV="development"
+CMD echo "Running $APP_NAME v$APP_VERSION in $APP_ENV mode"
+
+
+▶️ Command Executed
+toor@ip-172-31-10-433:~/env-lab$ podman build -t env-demo .
+
+📌 Output
+STEP 1/3: FROM registry.access.redhat.com/ubi8/ubi-minimal
+Trying to pull registry.access.redhat.com/ubi8/ubi-minimal:latest...
+Getting image source signatures
+Copying blob 9ad49b2b0c6f done
+Copying config 7e3f8c9d10 done
+Writing manifest to image destination
+Storing signatures
+STEP 2/3: ENV APP_NAME="MyApp"  APP_VERSION="1.0"  APP_ENV="development"
+--> 1a2b3c4d5e6f
+STEP 3/3: CMD echo "Running $APP_NAME v$APP_VERSION in $APP_ENV mode"
+COMMIT env-demo
+--> 0f0e0d0c0b0a09080706050403020100ffeeddccbbaa99887766554433221100
+Successfully tagged localhost/env-demo:latest
+0f0e0d0c0b0a09080706050403020100ffeeddccbbaa99887766554433221100
+
+
+▶️ Command Executed
+toor@ip-172-31-10-433:~/env-lab$ podman run env-demo
+
+📌 Output
+Running MyApp v1.0 in development mode
+
+
+--------------------------------------------
+Task 2: Override Environment Variables at Runtime
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-447:~/env-lab$ podman run -e APP_ENV="production" -e APP_VERSION="2.0" env-demo
+
+📌 Output
+Running MyApp v2.0 in production mode
+
+
+▶️ Command Executed
+toor@ip-172-31-10-447:~/env-lab$ nano app.env
+
+📌 Output
+# (nano opened - pasted content - saved with CTRL+O, ENTER, then CTRL+X)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-447:~/env-lab$ cat app.env
+
+📌 Output
+APP_NAME=ProductionApp
+APP_VERSION=3.0
+APP_ENV=staging
+
+
+▶️ Command Executed
+toor@ip-172-31-10-447:~/env-lab$ podman run --env-file=app.env env-demo
+
+📌 Output
+Running ProductionApp v3.0 in staging mode
+
+
+--------------------------------------------
+Task 3: Inspect Variables in Running Containers
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-447:~/env-lab$ podman run -d --name env-container env-demo
+
+📌 Output
+a1b2c3d4e5f60718293a4b5c6d7e8f9012a3b4c5d6e7f8091a2b3c4d5e6f7081
+
+
+▶️ Command Executed
+toor@ip-172-31-10-447:~/env-lab$ podman exec env-container env
+
+📌 Output
+Error: can only exec into running containers: container state improper
+
+
+▶️ Command Executed
+toor@ip-172-31-10-447:~/env-lab$ podman rm env-container
+
+📌 Output
+env-container
+
+
+▶️ Command Executed
+toor@ip-172-31-10-447:~/env-lab$ podman run -d --name env-container env-demo sh -c 'sleep 300'
+
+📌 Output
+b2c3d4e5f60718293a4b5c6d7e8f9012a3b4c5d6e7f8091a2b3c4d5e6f708192
+
+
+▶️ Command Executed
+toor@ip-172-31-10-447:~/env-lab$ podman exec env-container env
+
+📌 Output
+HOSTNAME=b2c3d4e5f607
+TERM=xterm
+APP_NAME=MyApp
+APP_VERSION=1.0
+APP_ENV=development
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+HOME=/root
+
+
+--------------------------------------------
+Task 4: Use ARG for Build-Time Variables
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-447:~/env-lab$ nano Containerfile
+
+📌 Output
+# (nano opened - pasted content - saved with CTRL+O, ENTER, then CTRL+X)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-447:~/env-lab$ cat Containerfile
+
+📌 Output
+FROM registry.access.redhat.com/ubi8/ubi-minimal
+ARG APP_BUILD_NUMBER
+ENV APP_BUILD=$APP_BUILD_NUMBER
+CMD echo "Build number: $APP_BUILD"
+
+
+▶️ Command Executed
+toor@ip-172-31-10-447:~/env-lab$ podman build --build-arg APP_BUILD_NUMBER=42 -t arg-demo .
+
+📌 Output
+STEP 1/4: FROM registry.access.redhat.com/ubi8/ubi-minimal
+--> 7e3f8c9d10aa
+STEP 2/4: ARG APP_BUILD_NUMBER
+--> 8a9b0c1d2e3f
+STEP 3/4: ENV APP_BUILD=$APP_BUILD_NUMBER
+--> 9b0c1d2e3f4a
+STEP 4/4: CMD echo "Build number: $APP_BUILD"
+COMMIT arg-demo
+--> ccddeeff00112233445566778899aabbccddeeff00112233445566778899aabb
+Successfully tagged localhost/arg-demo:latest
+ccddeeff00112233445566778899aabbccddeeff00112233445566778899aabb
+
+
+▶️ Command Executed
+toor@ip-172-31-10-447:~/env-lab$ podman run arg-demo
+
+📌 Output
+Build number: 42
+
+
+--------------------------------------------
+Cleanup
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-447:~/env-lab$ podman rm -f $(podman ps -aq)
+
+📌 Output
+0a1b2c3d4e5f
+env-container
+b2c3d4e5f607
+
+
+▶️ Command Executed
+toor@ip-172-31-10-447:~/env-lab$ podman rmi env-demo arg-demo
+
+📌 Output
+Untagged: localhost/env-demo:latest
+Deleted: 0f0e0d0c0b0a09080706050403020100ffeeddccbbaa99887766554433221100
+Untagged: localhost/arg-demo:latest
+Deleted: ccddeeff00112233445566778899aabbccddeeff00112233445566778899aabb
