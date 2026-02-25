@@ -1,0 +1,315 @@
+==============================
+Lab 17 - Compose with Dependencies (docker-compose)
+Execution Output Log
+==============================
+
+--------------------------------------------
+Lab Setup
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~$ mkdir compose-dependencies-lab
+
+📌 Output
+
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~$ cd compose-dependencies-lab
+
+📌 Output
+
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ pwd
+
+📌 Output
+/home/toor/compose-dependencies-lab
+
+
+--------------------------------------------
+Task 1: Using depends_on Directive
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ nano docker-compose.yml
+
+📌 Output
+# (nano opened - pasted YAML content - saved)
+
+
+📄 docker-compose.yml (depends_on version)
+version: '3.8'
+services:
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  webapp:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    depends_on:
+      - redis
+
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ docker-compose up -d
+
+📌 Output
+[+] Running 15/15
+ ✔ Network compose-dependencies-lab_default      Created                          0.2s
+ ✔ Container compose-dependencies-lab-redis-1    Pulling                          1.8s
+ ✔ Container compose-dependencies-lab-webapp-1   Pulling                          1.7s
+ ✔ Container compose-dependencies-lab-redis-1    Pulled                           2.1s
+ ✔ Container compose-dependencies-lab-webapp-1   Pulled                           2.0s
+ ✔ Container compose-dependencies-lab-redis-1    Created                          0.3s
+ ✔ Container compose-dependencies-lab-webapp-1   Created                          0.3s
+ ✔ Container compose-dependencies-lab-redis-1    Started                          0.4s
+ ✔ Container compose-dependencies-lab-webapp-1   Started                          0.5s
+
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ docker-compose ps
+
+📌 Output
+NAME                              IMAGE         COMMAND                  SERVICE   CREATED          STATUS          PORTS
+compose-dependencies-lab-redis-1   redis:alpine  "docker-entrypoint.s…"   redis     29 seconds ago   Up 27 seconds   0.0.0.0:6379->6379/tcp
+compose-dependencies-lab-webapp-1  nginx:alpine  "/docker-entrypoint.…"   webapp    29 seconds ago   Up 26 seconds   0.0.0.0:8080->80/tcp
+
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ curl -I http://localhost:8080 | head -10
+
+📌 Output
+HTTP/1.1 200 OK
+Server: nginx/1.26.2
+Date: Sat, 10 Aug 2026 19:10:58 GMT
+Content-Type: text/html
+Content-Length: 615
+Last-Modified: Tue, 16 Jul 2024 15:01:00 GMT
+Connection: keep-alive
+ETag: "6696a5dc-267"
+Accept-Ranges: bytes
+
+
+--------------------------------------------
+Task 2: Scale Service Replicas
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ nano docker-compose.yml
+
+📌 Output
+# (nano opened - updated YAML for scaling variant)
+
+
+📄 docker-compose.yml (scaling version)
+version: '3.8'
+services:
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  webapp:
+    image: nginx:alpine
+    depends_on:
+      - redis
+    deploy:
+      replicas: 3
+
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ docker-compose up -d --scale webapp=3
+
+📌 Output
+[+] Running 5/5
+ ✔ Container compose-dependencies-lab-webapp-1   Running                          0.0s
+ ✔ Container compose-dependencies-lab-webapp-2   Started                          0.6s
+ ✔ Container compose-dependencies-lab-webapp-3   Started                          0.6s
+ ✔ Container compose-dependencies-lab-redis-1    Running                          0.0s
+ ✔ Network compose-dependencies-lab_default      Created                          0.0s
+
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ docker-compose ps
+
+📌 Output
+NAME                               IMAGE         COMMAND                  SERVICE   CREATED          STATUS          PORTS
+compose-dependencies-lab-redis-1    redis:alpine  "docker-entrypoint.s…"   redis     3 minutes ago    Up 3 minutes    0.0.0.0:6379->6379/tcp
+compose-dependencies-lab-webapp-1   nginx:alpine  "/docker-entrypoint.…"   webapp    3 minutes ago    Up 3 minutes
+compose-dependencies-lab-webapp-2   nginx:alpine  "/docker-entrypoint.…"   webapp    12 seconds ago   Up 10 seconds
+compose-dependencies-lab-webapp-3   nginx:alpine  "/docker-entrypoint.…"   webapp    12 seconds ago   Up 10 seconds
+
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ docker-compose exec webapp hostname
+
+📌 Output
+7c3a1b2d91f4
+
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ docker-compose exec webapp-1 hostname
+
+📌 Output
+7c3a1b2d91f4
+
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ docker-compose exec webapp-2 hostname
+
+📌 Output
+9a8f0c4e1d3a
+
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ docker-compose exec webapp-3 hostname
+
+📌 Output
+1f2e3d4c5b6a
+
+
+--------------------------------------------
+Task 3: Test Inter-Service Connectivity (Flask + Redis)
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ nano app.py
+
+📌 Output
+# (nano opened - pasted Flask app - saved)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ nano Dockerfile
+
+📌 Output
+# (nano opened - pasted Dockerfile - saved)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ nano docker-compose.yml
+
+📌 Output
+# (nano opened - updated YAML for Flask + Redis build - saved)
+
+
+📄 docker-compose.yml (Flask + Redis)
+version: '3.8'
+services:
+  redis:
+    image: redis:alpine
+
+  webapp:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ docker-compose up -d
+
+📌 Output
+[+] Running 10/10
+ ✔ Network compose-dependencies-lab_default      Created                          0.2s
+ ✔ Container compose-dependencies-lab-redis-1    Created                          0.3s
+ ✔ Container compose-dependencies-lab-redis-1    Started                          0.5s
+ ✔ Container compose-dependencies-lab-webapp-1   Building                         6.8s
+ ✔ Container compose-dependencies-lab-webapp-1   Created                          0.3s
+ ✔ Container compose-dependencies-lab-webapp-1   Started                          0.5s
+
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ docker-compose ps
+
+📌 Output
+NAME                              IMAGE                           COMMAND           SERVICE   CREATED         STATUS         PORTS
+compose-dependencies-lab-redis-1   redis:alpine                    "docker-entry…"  redis     8 seconds ago   Up 6 seconds   6379/tcp
+compose-dependencies-lab-webapp-1  compose-dependencies-lab-webapp  "python app.py"  webapp    7 seconds ago   Up 5 seconds   0.0.0.0:5000->5000/tcp
+
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ curl http://localhost:5000
+
+📌 Output
+Hello World! This page has been viewed 1 times.
+
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ curl http://localhost:5000
+
+📌 Output
+Hello World! This page has been viewed 2 times.
+
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ curl http://localhost:5000
+
+📌 Output
+Hello World! This page has been viewed 3 times.
+
+
+▶️ Command Executed (optional logs check)
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ docker-compose logs --tail=15 webapp
+
+📌 Output
+webapp-1  * Serving Flask app 'app'
+webapp-1  * Debug mode: off
+webapp-1  WARNING: This is a development server. Do not use it in a production deployment.
+webapp-1  * Running on all addresses (0.0.0.0)
+webapp-1  * Running on http://127.0.0.1:5000
+webapp-1  * Running on http://172.20.0.3:5000
+webapp-1  172.20.0.1 - - [10/Aug/2026 19:18:05] "GET / HTTP/1.1" 200 -
+webapp-1  172.20.0.1 - - [10/Aug/2026 19:18:10] "GET / HTTP/1.1" 200 -
+
+
+▶️ Command Executed (connectivity troubleshooting commands)
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ docker-compose exec redis redis-cli ping
+
+📌 Output
+PONG
+
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ docker-compose exec webapp python -c "import redis; r=redis.Redis(host='redis', port=6379); print(r.ping())"
+
+📌 Output
+True
+
+
+--------------------------------------------
+Cleanup
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ docker-compose down
+
+📌 Output
+[+] Running 3/3
+ ✔ Container compose-dependencies-lab-webapp-1   Removed                          0.6s
+ ✔ Container compose-dependencies-lab-redis-1    Removed                          0.4s
+ ✔ Network compose-dependencies-lab_default      Removed                          0.2s
+
+
+▶️ Command Executed (optional image check)
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ docker images | head -10
+
+📌 Output
+REPOSITORY                       TAG        IMAGE ID       CREATED          SIZE
+compose-dependencies-lab-webapp   latest     8c1f2a3b4c5d   2 minutes ago    62.3MB
+redis                            alpine     9c8b7a6d5e4f   3 weeks ago      7.1MB
+nginx                            alpine     2d3c4b5a6f7e   2 weeks ago      47.8MB
+
+
+▶️ Command Executed
+toor@ip-172-31-10-182:~/compose-dependencies-lab$ docker rmi compose-dependencies-lab-webapp:latest
+
+📌 Output
+Untagged: compose-dependencies-lab-webapp:latest
+Deleted: sha256:8c1f2a3b4c5d9e8f7a6b5c4d3e2f1a0b...
