@@ -1,5 +1,5 @@
 #!/bin/bash
-# Lab 28: Handling Container Dependencies
+# Lab 38: Handling Container Dependencies
 # Commands Executed During Lab (sequential, no explanations)
 
 mkdir container-dependencies-lab && cd container-dependencies-lab
