@@ -1,0 +1,188 @@
+=============================
+Lab 39 - Troubleshooting Common Container Issues
+Execution Output Log
+=============================
+
+----------------------------------------
+Task 1 - Diagnose Resource Constraints
+----------------------------------------
+
+$ podman run -d --name res-test docker.io/library/nginx:alpine
+a1b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef01
+
+
+$ podman ps
+CONTAINER ID  IMAGE                          COMMAND               CREATED        STATUS            PORTS  NAMES
+a1b2c3d4e5f6  docker.io/library/nginx:alpine  nginx -g daemon off;  8 seconds ago  Up 8 seconds ago        res-test
+
+
+$ podman inspect a1b2c3d4e5f6 | grep -i "memory\|cpu"
+        "CpuShares": 0,
+        "CpuQuota": 0,
+        "CpuPeriod": 0,
+        "CpuRtRuntime": 0,
+        "CpuRtPeriod": 0,
+        "CpusetCpus": "",
+        "CpusetMems": "",
+        "Memory": 0,
+        "MemoryReservation": 0,
+        "MemorySwap": 0,
+        "MemorySwappiness": -1,
+
+
+$ podman stats a1b2c3d4e5f6 --no-stream
+ID            NAME      CPU %   MEM USAGE / LIMIT     MEM %   NET IO      BLOCK IO    PIDS
+a1b2c3d4e5f6  res-test  0.00%   2.4MiB / 1.84GiB      0.13%   0B/0B       0B/0B       7
+
+
+$ podman update --memory 512m a1b2c3d4e5f6
+a1b2c3d4e5f6
+
+
+$ podman inspect a1b2c3d4e5f6 | grep -i "Memory" | head
+        "Memory": 536870912,
+        "MemoryReservation": 0,
+        "MemorySwap": 0,
+        "MemorySwappiness": -1,
+
+
+----------------------------------------
+Task 2 - Resolve SELinux Denials
+----------------------------------------
+
+$ sudo ausearch -m avc -ts recent | tail -n 8
+----
+time->Wed Feb 25 13:10:44 2026
+type=AVC msg=audit(173,123:211): avc:  denied  { read } for  pid=2871 comm="nginx" name="secret.txt" dev="xvda1" ino=131081 scontext=system_u:system_r:container_t:s0:c98,c509 tcontext=unconfined_u:object_r:default_t:s0 tclass=file
+----
+time->Wed Feb 25 13:10:44 2026
+type=AVC msg=audit(173,123:212): avc:  denied  { open } for  pid=2871 comm="nginx" path="/home/centos/badmount/secret.txt" dev="xvda1" ino=131081 scontext=system_u:system_r:container_t:s0:c98,c509 tcontext=unconfined_u:object_r:default_t:s0 tclass=file
+
+
+$ sudo setenforce 0
+
+
+$ getenforce
+Permissive
+
+
+$ mkdir -p ~/badmount && echo "TOPSECRET" > ~/badmount/secret.txt
+
+
+$ ls -Z ~/badmount/secret.txt
+unconfined_u:object_r:default_t:s0 /home/centos/badmount/secret.txt
+
+
+$ sudo chcon -Rt container_file_t /home/centos/badmount
+
+
+$ ls -Z ~/badmount/secret.txt
+unconfined_u:object_r:container_file_t:s0 /home/centos/badmount/secret.txt
+
+
+$ sudo setenforce 1
+
+
+$ getenforce
+Enforcing
+
+
+----------------------------------------
+Task 3 - Debug Network Conflicts
+----------------------------------------
+
+$ podman run -d --name port1 -p 8080:80 docker.io/library/nginx:alpine
+b1c2d3e4f5061728394a5b6c7d8e9f00123456789abcdef0123456789abcdef02
+
+
+$ sudo ss -tulnp | grep 8080
+tcp   LISTEN 0      4096      0.0.0.0:8080      0.0.0.0:*    users:(("rootlessport",pid=3099,fd=11))
+
+
+$ podman run -d --name port2 -p 8080:80 docker.io/library/nginx:alpine
+Error: unable to start container "port2": rootlessport cannot expose port 8080, listen tcp 0.0.0.0:8080: bind: address already in use
+
+
+$ podman stop -f port1
+port1
+
+
+$ podman inspect a1b2c3d4e5f6 --format '{{.NetworkSettings.SandboxKey}}'
+/run/netns/netns-8b2d6b0b-9d1a-4f2a-a7b1-2c3d4e5f6071
+
+
+$ podman inspect --format '{{.State.Pid}}' a1b2c3d4e5f6
+3021
+
+
+$ sudo nsenter -n -t 3021 ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+2: eth0@if30: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    link/ether 0a:58:0a:88:00:0c brd ff:ff:ff:ff:ff:ff
+    inet 10.88.0.12/16 brd 10.88.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+
+
+----------------------------------------
+Task 4 - Fix Permission Issues
+----------------------------------------
+
+$ podman inspect a1b2c3d4e5f6 --format '{{.Config.User}}'
+
+
+$ podman run --rm -it --user root docker.io/library/alpine /bin/sh
+/ # 
+
+
+$ whoami
+root
+
+
+$ exit
+exit
+
+
+$ podman run --rm -v /home/centos/badmount:/data:Z -it docker.io/library/alpine /bin/sh
+/ # 
+
+
+$ ls -l /data
+total 4
+-rw-r--r--    1 root     root             10 Feb 25 13:10 secret.txt
+
+
+$ cat /data/secret.txt
+TOPSECRET
+
+
+$ exit
+exit
+
+
+----------------------------------------
+Final Verification
+----------------------------------------
+
+$ podman logs res-test | tail -n 5
+/docker-entrypoint.sh: Configuration complete; ready for start up
+2026/02/25 08:41:12 [notice] 1#1: nginx/1.26.1
+2026/02/25 08:41:12 [notice] 1#1: start worker processes
+2026/02/25 08:41:12 [notice] 1#1: start worker process 33
+2026/02/25 08:41:12 [notice] 1#1: start worker process 34
+
+
+----------------------------------------
+Cleanup (extra)
+----------------------------------------
+
+$ podman rm -f res-test port1 port2 2>/dev/null; rm -rf ~/badmount
+res-test
+port1
+
+
+=============================
+Lab completed successfully on a cloud lab environment
+=============================
