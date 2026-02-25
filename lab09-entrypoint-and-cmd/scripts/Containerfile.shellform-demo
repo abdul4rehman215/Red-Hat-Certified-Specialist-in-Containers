@@ -1,0 +1,5 @@
+FROM registry.access.redhat.com/ubi9/ubi-minimal
+
+# Shell form (note: not recommended for most cases)
+ENTRYPOINT echo "Shell form ENTRYPOINT:"
+CMD echo "Shell form CMD"
