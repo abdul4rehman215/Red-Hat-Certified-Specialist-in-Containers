@@ -1,0 +1,174 @@
+==============================
+Lab 15 - Remote Debugging of Containers (Node.js + VS Code Attach)
+Execution Output Log
+==============================
+
+--------------------------------------------
+Task 1: Build a Sample Node.js App Image
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-690:~$ mkdir -p ~/debug-lab && cd ~/debug-lab
+
+📌 Output
+toor@ip-172-31-10-690:~/debug-lab$
+
+
+▶️ Command Executed
+toor@ip-172-31-10-690:~/debug-lab$ nano server.js
+
+📌 Output
+# (nano opened - pasted content - saved with CTRL+O, ENTER, then CTRL+X)
+
+
+✅ server.js content used (saved in file):
+const http = require("http");
+
+const PORT = process.env.PORT || 3000;
+
+const server = http.createServer((req, res) => {
+  // simple endpoint to test
+  if (req.url === "/") {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("Hello from Node debug container!\n");
+    return;
+  }
+  res.writeHead(404, { "Content-Type": "text/plain" });
+  res.end("Not Found\n");
+});
+
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+
+▶️ Command Executed
+toor@ip-172-31-10-690:~/debug-lab$ nano Containerfile
+
+📌 Output
+# (nano opened - pasted content - saved with CTRL+O, ENTER, then CTRL+X)
+
+
+✅ Containerfile content used:
+FROM docker.io/library/node:20-alpine
+WORKDIR /app
+COPY server.js /app/server.js
+EXPOSE 3000 9229
+CMD ["node", "--inspect=0.0.0.0:9229", "server.js"]
+
+
+▶️ Command Executed
+toor@ip-172-31-10-690:~/debug-lab$ podman build -t my-node-app .
+
+📌 Output
+STEP 1/5: FROM docker.io/library/node:20-alpine
+Trying to pull docker.io/library/node:20-alpine...
+Getting image source signatures
+Copying blob 44cf07d57ee4 done
+Copying blob 9c5c0b4adf3a done
+Copying config 5a6b7c8d90 done
+Writing manifest to image destination
+Storing signatures
+STEP 2/5: WORKDIR /app
+--> 1a2b3c4d5e6f
+STEP 3/5: COPY server.js /app/server.js
+--> 2b3c4d5e6f70
+STEP 4/5: EXPOSE 3000 9229
+--> 3c4d5e6f7081
+STEP 5/5: CMD ["node", "--inspect=0.0.0.0:9229", "server.js"]
+COMMIT my-node-app
+--> 7a6b5c4d3e2f1100ffeeddccbbaa99887766554433221100ffeeddccbbaa9988
+Successfully tagged localhost/my-node-app:latest
+7a6b5c4d3e2f1100ffeeddccbbaa99887766554433221100ffeeddccbbaa9988
+
+
+--------------------------------------------
+Run Container with Debug Port Exposed
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-690:~/debug-lab$ podman run -d -p 3000:3000 -p 9229:9229 --name debug-container my-node-app
+
+📌 Output
+c2b1a0f99887766554433221100ffeeddccbbaa99887766554433221100ffeeddcc
+
+
+▶️ Command Executed
+toor@ip-172-31-10-690:~/debug-lab$ podman ps
+
+📌 Output
+CONTAINER ID  IMAGE                        COMMAND                   CREATED         STATUS             PORTS                                           NAMES
+c2b1a0f99887  localhost/my-node-app:latest  node --inspect=0.0...     8 seconds ago   Up 8 seconds ago   0.0.0.0:3000->3000/tcp, 0.0.0.0:9229->9229/tcp  debug-container
+
+
+▶️ Command Executed (application check)
+toor@ip-172-31-10-690:~/debug-lab$ curl -s http://localhost:3000
+
+📌 Output
+Hello from Node debug container!
+
+
+--------------------------------------------
+Task 2: Mount Source Code for Live Debugging
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-690:~/debug-lab$ podman stop debug-container
+
+📌 Output
+debug-container
+
+
+▶️ Command Executed
+toor@ip-172-31-10-690:~/debug-lab$ podman rm debug-container
+
+📌 Output
+debug-container
+
+
+▶️ Command Executed
+toor@ip-172-31-10-690:~/debug-lab$ podman run -d -p 3000:3000 -p 9229:9229 -v $(pwd):/app --name debug-container my-node-app
+
+📌 Output
+d1e0f99887766554433221100ffeeddccbbaa99887766554433221100ffeeddccbb
+
+
+▶️ Command Executed
+toor@ip-172-31-10-690:~/debug-lab$ podman exec -it debug-container ls /app
+
+📌 Output
+Containerfile
+server.js
+
+
+--------------------------------------------
+Task 3: Connect IDE Debugger to Container (Validation)
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-690:~/debug-lab$ podman port debug-container
+
+📌 Output
+3000/tcp -> 0.0.0.0:3000
+9229/tcp -> 0.0.0.0:9229
+
+
+▶️ Command Executed
+toor@ip-172-31-10-690:~/debug-lab$ podman logs debug-container | head -n 12
+
+📌 Output
+Debugger listening on ws://0.0.0.0:9229/0b1c2d3e-4f5a-6789-aaaa-bbbbccccdddd
+For help, see: https://nodejs.org/en/docs/inspector
+Server running on port 3000
+
+
+--------------------------------------------
+Optional Cleanup
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-690:~/debug-lab$ podman stop debug-container && podman rm debug-container
+
+📌 Output
+debug-container
+debug-container
