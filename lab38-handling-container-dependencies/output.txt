@@ -1,0 +1,252 @@
+=============================
+Lab 38 - Handling Container Dependencies
+Execution Output Log
+=============================
+
+----------------------------------------
+Lab Setup
+----------------------------------------
+
+$ mkdir container-dependencies-lab && cd container-dependencies-lab
+
+
+$ pwd
+/home/centos/container-dependencies-lab
+
+
+$ podman --version
+podman version 3.4.4
+
+
+$ podman-compose --version
+podman-compose version: 1.0.6
+
+
+----------------------------------------
+Task 1 - Using depends_on in Compose Files
+----------------------------------------
+
+$ nano docker-compose.yml
+
+
+$ cat docker-compose.yml
+version: '3.8'
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_PASSWORD: example
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    depends_on:
+      db:
+        condition: service_healthy
+
+
+$ podman-compose up -d
+['podman', 'network', 'exists', 'container-dependencies-lab_default']
+container-dependencies-lab_default
+['podman', 'run', '-d', '--name=container-dependencies-lab_db_1', '--label', 'io.podman.compose.project=container-dependencies-lab', '--label', 'io.podman.compose.service=db', '--network', 'container-dependencies-lab_default', '-e', 'POSTGRES_PASSWORD=example', 'postgres:15-alpine']
+['podman', 'run', '-d', '--name=container-dependencies-lab_web_1', '--label', 'io.podman.compose.project=container-dependencies-lab', '--label', 'io.podman.compose.service=web', '--network', 'container-dependencies-lab_default', '-p', '8080:80', 'nginx:alpine']
+
+
+$ podman ps
+CONTAINER ID  IMAGE                 COMMAND               CREATED         STATUS             PORTS                   NAMES
+a1b2c3d4e5f6  postgres:15-alpine     postgres              15 seconds ago  Up 15 seconds ago                          container-dependencies-lab_db_1
+b2c3d4e5f607  nginx:alpine           nginx -g daemon off;  13 seconds ago  Up 13 seconds ago  0.0.0.0:8080->80/tcp    container-dependencies-lab_web_1
+
+
+$ podman inspect --format='{{.State.Health.Status}}' container-dependencies-lab_db_1
+healthy
+
+
+----------------------------------------
+Task 2 - Writing Health Check Scripts
+----------------------------------------
+
+$ nano healthcheck.sh
+
+
+$ chmod +x healthcheck.sh
+
+
+$ ls -l healthcheck.sh
+-rwxr-xr-x. 1 centos centos 167 Feb 25 13:59 healthcheck.sh
+
+
+$ nano docker-compose.yml
+
+
+$ cat docker-compose.yml
+version: '3.8'
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_PASSWORD: example
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    image: python:3.9-alpine
+    volumes:
+      - ./healthcheck.sh:/healthcheck.sh
+    healthcheck:
+      test: ["CMD", "/healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      db:
+        condition: service_healthy
+
+
+----------------------------------------
+Task 3 + Task 4 - Retry Logic + Connectivity Test
+----------------------------------------
+
+$ nano entrypoint.sh
+
+
+$ chmod +x entrypoint.sh
+
+
+$ nano Dockerfile
+
+
+$ cat Dockerfile
+FROM python:3.9-alpine
+WORKDIR /app
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh && apk add --no-cache netcat-openbsd
+ENTRYPOINT ["./entrypoint.sh"]
+CMD ["python", "app.py"]
+
+
+$ nano app.py
+
+
+$ nano Dockerfile
+
+
+$ cat Dockerfile
+FROM python:3.9-alpine
+WORKDIR /app
+
+COPY entrypoint.sh .
+COPY app.py .
+
+RUN chmod +x entrypoint.sh && \
+    apk add --no-cache netcat-openbsd postgresql-libs && \
+    pip install --no-cache-dir psycopg2-binary
+
+ENTRYPOINT ["./entrypoint.sh"]
+CMD ["python", "app.py"]
+
+
+$ nano docker-compose.yml
+
+
+$ cat docker-compose.yml
+version: '3.8'
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_PASSWORD: example
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_PASSWORD: example
+
+
+$ podman-compose up --build
+['podman', 'network', 'exists', 'container-dependencies-lab_default']
+container-dependencies-lab_default
+['podman', 'build', '-t', 'container-dependencies-lab_app', '.']
+STEP 1/8: FROM python:3.9-alpine
+STEP 2/8: WORKDIR /app
+--> 1a2b3c4d5e6f
+STEP 3/8: COPY entrypoint.sh .
+--> 2b3c4d5e6f70
+STEP 4/8: COPY app.py .
+--> 3c4d5e6f7081
+STEP 5/8: RUN chmod +x entrypoint.sh &&     apk add --no-cache netcat-openbsd postgresql-libs &&     pip install --no-cache-dir psycopg2-binary
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.20/main/x86_64/APKINDEX.tar.gz
+(1/2) Installing netcat-openbsd (1.226-r0)
+(2/2) Installing postgresql-libs (16.3-r0)
+Successfully installed psycopg2-binary-2.9.9
+STEP 6/8: ENTRYPOINT ["./entrypoint.sh"]
+STEP 7/8: CMD ["python", "app.py"]
+COMMIT container-dependencies-lab_app
+--> 4d5e6f708192
+Successfully tagged localhost/container-dependencies-lab_app:latest
+
+container-dependencies-lab_db_1 is up-to-date
+container-dependencies-lab_web_1 is up-to-date
+Recreating container-dependencies-lab_app_1 ... done
+Attaching to container-dependencies-lab_db_1, container-dependencies-lab_web_1, container-dependencies-lab_app_1
+container-dependencies-lab_app_1  | Waiting for database... Attempt 1/5
+container-dependencies-lab_app_1  | Waiting for database... Attempt 2/5
+container-dependencies-lab_app_1  | Database is ready!
+container-dependencies-lab_app_1  | Successfully connected to database!
+container-dependencies-lab_app_1 exited with code 0
+
+
+----------------------------------------
+Cleanup
+----------------------------------------
+
+$ podman-compose down
+['podman', 'rm', '-f', 'container-dependencies-lab_app_1']
+['podman', 'rm', '-f', 'container-dependencies-lab_web_1']
+['podman', 'rm', '-f', 'container-dependencies-lab_db_1']
+
+
+$ podman system prune -f
+Deleted unused containers: 0
+Deleted unused images: 1
+Deleted unused volumes: 0
+Deleted unused networks: 0
+Total reclaimed space: 38.2MB
+
+
+=============================
+Lab completed successfully on a cloud lab environment
+=============================
