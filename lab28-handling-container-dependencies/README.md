@@ -1,4 +1,4 @@
-# 🧪 Lab 28: Handling Container Dependencies
+# 🧪 Lab 38: Handling Container Dependencies
 
 ## 🧾 Lab Summary
 This lab focused on building **reliable startup flows** for containerized applications where one service must wait for another (e.g., web/app depends on database). I implemented dependency handling in three layers:
@@ -45,7 +45,7 @@ By the end of this lab, I was able to:
 
 ## 🗂️ Repository Structure
 ```text
-lab28-handling-container-dependencies/
+lab38-handling-container-dependencies/
 ├── README.md
 ├── commands.sh
 ├── output.txt
