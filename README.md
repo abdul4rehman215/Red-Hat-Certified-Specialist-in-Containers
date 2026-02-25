@@ -2,8 +2,8 @@
 
 > Enterprise-Grade Container Engineering • Platform & DevOps Workflows • Secure Microservice Deployment • Production Kubernetes Orchestration
 
-A complete 40-lab hands-on container engineering series progressing from Podman fundamentals to secure microservice deployment and Kubernetes orchestration.
-Simulates real-world DevOps, Platform Engineering, and DevSecOps workflows.
+### A complete 40-lab hands-on container engineering series progressing from Podman fundamentals to secure microservice deployment and Kubernetes orchestration.
+### Simulates real-world DevOps, Platform Engineering, and DevSecOps workflows.
 
 ---
 
@@ -52,6 +52,11 @@ Simulates real-world DevOps, Platform Engineering, and DevSecOps workflows.
 ![Level](https://img.shields.io/badge/Level-Intermediate%20%E2%86%92%20Advanced-blueviolet?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Completed-success?style=for-the-badge)
 
+<!-- ===================== REPO METADATA ===================== -->
+![RepoSize](https://img.shields.io/github/repo-size/abdul4rehman215/Red-Hat-Certified-Specialist-in-Security-Linux?style=for-the-badge)
+![Stars](https://img.shields.io/github/stars/abdul4rehman215/Red-Hat-Certified-Specialist-in-Security-Linux?style=for-the-badge)
+![Forks](https://img.shields.io/github/forks/abdul4rehman215/Red-Hat-Certified-Specialist-in-Security-Linux?style=for-the-badge)
+![LastCommit](https://img.shields.io/github/last-commit/abdul4rehman215/Red-Hat-Certified-Specialist-in-Security-Linux?style=for-the-badge)
 
 </div>
 
@@ -130,8 +135,8 @@ Each lab includes:
 
 # 📦 Section 1 – Container & Kubernetes Engineering (Labs 1–20)
 
-Progression:
-Containers → Image Engineering → Persistence → Compose → Kubernetes → StatefulSets → Service Exposure
+### Progression:
+### Containers → Image Engineering → Persistence → Compose → Kubernetes → StatefulSets → Service Exposure
 
 ---
 
@@ -147,11 +152,11 @@ Containers → Image Engineering → Persistence → Compose → Kubernetes → 
 
 | Lab | Title | Focus |
 |-----|-------|-------|
-| 01 | Introduction to Containers | Isolation & lifecycle |
-| 02 | Exploring Podman CLI | Runtime management |
-| 03 | Running Containers | Detached mode & ports |
-| 04 | Creating & Managing Pods | Pod architecture |
-| 05 | Managing Container Images | Pull, inspect, remove |
+| 01 | [Introduction to Containers](lab01-introduction-to-containers) | Isolation & lifecycle |
+| 02 | [Exploring Podman CLI](lab02-exploring-podman-cli) | Runtime management |
+| 03 | [Running Containers](lab03-running-containers-with-podman) | Detached mode & ports |
+| 04 | [Creating & Managing Pods](lab04-creating-and-managing-pods) | Pod architecture |
+| 05 | [Managing Container Images](lab05-managing-container-images) | Pull, inspect, remove |
 
 ### 🛠 Skills Demonstrated
 - Container lifecycle management
@@ -174,10 +179,10 @@ Containers → Image Engineering → Persistence → Compose → Kubernetes → 
 
 | Lab | Title | Focus |
 |-----|-------|-------|
-| 06 | Building Custom Images | Containerfile writing |
-| 07 | Layer Caching & Optimization | Build efficiency |
-| 08 | Environment Variables | Runtime injection |
-| 09 | ENTRYPOINT vs CMD | Execution control |
+| 06 | [Building Custom Images](lab06-building-custom-container-images) | Containerfile writing |
+| 07 | [Layer Caching & Optimization](lab07-layer-caching-and-optimization) | Build efficiency |
+| 08 | [Environment Variables](lab08-environment-variables-in-images) | Runtime injection |
+| 09 | [ENTRYPOINT vs CMD](lab09-entrypoint-and-cmd) | Execution control |
 
 ### 🛠 Skills Demonstrated
 - Layer consolidation
@@ -200,9 +205,9 @@ Containers → Image Engineering → Persistence → Compose → Kubernetes → 
 
 | Lab | Title | Focus |
 |-----|-------|-------|
-| 10 | Persisting Data with Volumes | Named volumes |
-| 11 | Running Stateful Containers | MySQL/Postgres |
-| 12 | Backup & Restore Data | mysqldump workflows |
+| 10 | [Persisting Data with Volumes](lab10-persisting-data-with-volumes) | Named volumes |
+| 11 | [Running Stateful Containers](lab11-running-stateful-containers) | MySQL/Postgres |
+| 12 | [Backup & Restore Data](lab12-backup-and-restore-data) | mysqldump workflows |
 
 ### 🛠 Skills Demonstrated
 - Persistent storage design
@@ -224,9 +229,9 @@ Containers → Image Engineering → Persistence → Compose → Kubernetes → 
 
 | Lab | Title | Focus |
 |-----|-------|-------|
-| 13 | Troubleshooting Containers | Logs & inspect |
-| 14 | Networking in Containers | Bridge & custom networks |
-| 15 | Remote Debugging | VS Code integration |
+| 13 | [Troubleshooting Containers](lab13-troubleshooting-containers) | Logs & inspect |
+| 14 | [Networking in Containers](lab14-networking-in-containers) | Bridge & custom networks |
+| 15 | [Remote Debugging](lab15-remote-debugging-of-containers) | VS Code integration |
 
 ### 🛠 Skills Demonstrated
 - Runtime diagnostics
@@ -248,8 +253,8 @@ Containers → Image Engineering → Persistence → Compose → Kubernetes → 
 
 | Lab | Title | Focus |
 |-----|-------|-------|
-| 16 | Compose Basics | YAML orchestration |
-| 17 | Compose with Dependencies | Redis + Flask |
+| 16 | [Compose Basics](lab16-compose-basics) | YAML orchestration |
+| 17 | [Compose with Dependencies](lab17-compose-with-dependencies) | Redis + Flask |
 
 ### 🛠 Skills Demonstrated
 - Service dependency management
@@ -271,9 +276,9 @@ Containers → Image Engineering → Persistence → Compose → Kubernetes → 
 
 | Lab | Title | Focus |
 |-----|-------|-------|
-| 18 | Kubernetes Pod Deployment | YAML & kubectl |
-| 19 | Deploying StatefulSets | PVC & Headless Services |
-| 20 | Service & Ingress Setup | External exposure |
+| 18 | [Kubernetes Pod Deployment](lab18-kubernetes-pod-deployment) | YAML & kubectl |
+| 19 | [Deploying StatefulSets](lab19-deploying-statefulsets) | PVC & Headless Services |
+| 20 | [Service & Ingress Setup](lab20-service-and-ingress-setup) | External exposure |
 
 ### 🛠 Skills Demonstrated
 - Kubernetes manifest design
@@ -286,8 +291,8 @@ Containers → Image Engineering → Persistence → Compose → Kubernetes → 
 
 # 🔐 Section 2 – Secure Container Engineering (Labs 21–40)
 
-Progression:
-Containerfile Security → Runtime Hardening → Registry Ops → Observability → Orchestration → Production Debugging → Secure Microservice Deployment
+### Progression:
+### Containerfile Security → Runtime Hardening → Registry Ops → Observability → Orchestration → Production Debugging → Secure Microservice Deployment
 
 ---
 
@@ -303,13 +308,13 @@ Containerfile Security → Runtime Hardening → Registry Ops → Observability 
 
 | Lab | Title | Focus Area |
 |-----|-------|------------|
-| 21 | Understanding FROM Instruction | Image pinning & reproducibility |
-| 22 | Using RUN Instruction Efficiently | Layer minimization & caching |
-| 23 | ADD vs COPY Instruction | Secure file injection practices |
-| 24 | WORKDIR & USER Instructions | Non-root container design |
-| 25 | Securing Images with Least Privilege | Hardening & attack surface reduction |
-| 26 | CMD vs ENTRYPOINT | Execution behavior control |
-| 27 | Parameterized Entrypoint Scripts | Runtime flexibility & scripting |
+| 21 | [Understanding FROM Instruction](lab21-understanding-from-instruction) | Image pinning & reproducibility |
+| 22 | [Using RUN Instruction Efficiently](lab22-using-run-instruction-efficiently) | Layer minimization & caching |
+| 23 | [ADD vs COPY Instruction](lab23-add-vs-copy-instruction) | Secure file injection practices |
+| 24 | [WORKDIR & USER Instructions](lab24-setting-workdir-and-user-instructions) | Non-root container design |
+| 25 | [Securing Images with Least Privilege](lab25-securing-images-with-least-privilege) | Hardening & attack surface reduction |
+| 26 | [CMD vs ENTRYPOINT](lab26-cmd-vs-entrypoint-instructions) | Execution behavior control |
+| 27 | [Parameterized Entrypoint Scripts](lab27-parameterized-entrypoint-scripts) | Runtime flexibility & scripting |
 
 ### 🛠 Skills Demonstrated
 - Production-grade Containerfile authoring  
@@ -334,9 +339,9 @@ Containerfile Security → Runtime Hardening → Registry Ops → Observability 
 
 | Lab | Title | Focus Area |
 |-----|-------|------------|
-| 28 | EXPOSE & Port Binding | Host ↔ container networking |
-| 29 | ENV & Environment Variables | Runtime configuration injection |
-| 30 | Container Volumes & Bind Mounts | Persistent storage & SELinux labeling |
+| 28 | [EXPOSE & Port Binding](lab28-expose-and-port-binding) | Host ↔ container networking |
+| 29 | [ENV & Environment Variables](lab29-using-env-and-environment-variables) | Runtime configuration injection |
+| 30 | [Container Volumes & Bind Mounts](lab30-container-volumes-and-bind-mounts) | Persistent storage & SELinux labeling |
 
 ### 🛠 Skills Demonstrated
 - Port publishing vs EXPOSE distinction  
@@ -360,9 +365,9 @@ Containerfile Security → Runtime Hardening → Registry Ops → Observability 
 
 | Lab | Title | Focus Area |
 |-----|-------|------------|
-| 31 | Image Tagging & Registry Interaction | Versioning & push/pull workflows |
-| 32 | Backup & Restore Images | Image portability & disaster recovery |
-| 33 | Running Containers Locally with Podman | Runtime execution modes & overrides |
+| 31 | [Image Tagging & Registry Interaction](lab31-image-tagging-and-registry-interaction) | Versioning & push/pull workflows |
+| 32 | [Backup & Restore Images](lab32-backup-and-restore-images-and-containers) | Image portability & disaster recovery |
+| 33 | [Running Containers Locally with Podman](lab33-running-containers-locally-with-podman) | Runtime execution modes & overrides |
 
 ### 🛠 Skills Demonstrated
 - Semantic version tagging  
@@ -386,9 +391,9 @@ Containerfile Security → Runtime Hardening → Registry Ops → Observability 
 
 | Lab | Title | Focus Area |
 |-----|-------|------------|
-| 34 | Retrieving Logs & Events | Runtime observability |
-| 35 | Inspecting Containers & Images | Metadata extraction |
-| 36 | Managing Environment Files & Secrets | Secure configuration management |
+| 34 | [Retrieving Logs & Events](lab34-retrieving-container-logs-and-events) | Runtime observability |
+| 35 | [Inspecting Containers & Images](lab35-inspecting-containers-and-images-with-commands) | Metadata extraction |
+| 36 | [Managing Environment Files & Secrets](lab36-managing-environment-files-and-secrets) | Secure configuration management |
 
 ### 🛠 Skills Demonstrated
 - `podman logs` filtering & follow  
@@ -413,8 +418,8 @@ Containerfile Security → Runtime Hardening → Registry Ops → Observability 
 
 | Lab | Title | Focus Area |
 |-----|-------|------------|
-| 37 | Running Multi-Container Applications | Compose stack deployment |
-| 38 | Handling Container Dependencies | Health checks & service coordination |
+| 37 | [Running Multi-Container Applications](lab37-running-multi-container-applications) | Compose stack deployment |
+| 38 | [Handling Container Dependencies](lab38-handling-container-dependencies) | Health checks & service coordination |
 
 ### 🛠 Skills Demonstrated
 - Multi-container networking  
@@ -438,8 +443,8 @@ Containerfile Security → Runtime Hardening → Registry Ops → Observability 
 
 | Lab | Title | Focus Area |
 |-----|-------|------------|
-| 39 | Troubleshooting Common Container Issues | Resource limits & SELinux debugging |
-| 40 | Secure Flask Microservice | Production-ready secure deployment |
+| 39 | [Troubleshooting Common Container Issues](lab39-troubleshooting-common-container-issues) | Resource limits & SELinux debugging |
+| 40 | [Secure Flask Microservice](lab40-secure-flask-microservice) | Production-ready secure deployment |
 
 ### 🛠 Skills Demonstrated
 - CPU & memory diagnostics  
@@ -623,21 +628,21 @@ This heatmap reflects **hands-on implementation across 40 labs** in:
 |------------|---------------|----------------|---------------------------|
 | 🐳 Container Runtime Management | ██████████ 100% | Rootless/rootful execution, pods, lifecycle control | Podman 4.9.3 |
 | 🏗 Image Engineering & Optimization | ██████████ 100% | Multistage builds, caching, layer minimization | Containerfile, Dockerfile, podman build |
-| 🔐 Secure Container Design | █████████ 90% | Non-root USER, least privilege, image scanning & signing | SELinux, podman scan, trust |
+| 🔐 Secure Container Design | █████████░ 90% | Non-root USER, least privilege, image scanning & signing | SELinux, podman scan, trust |
 | 💾 Stateful Workloads & Persistence | ██████████ 100% | Volumes, bind mounts, DB persistence, backup/restore | MySQL, PostgreSQL, Redis |
-| 🔄 Multi-Container Orchestration | █████████ 90% | Service dependency control, scaling, environment injection | podman-compose |
+| 🔄 Multi-Container Orchestration | █████████░ 90% | Service dependency control, scaling, environment injection | podman-compose |
 | ☸ Kubernetes Workload Deployment | ██████████ 100% | Pods, Services, StatefulSets, PVCs | kubectl, podman play kube |
 | 🌐 Service Exposure & Networking | ██████████ 100% | ClusterIP, NodePort, Ingress routing | Kubernetes, NGINX Ingress |
 | 🧰 Runtime Debugging & Diagnostics | ██████████ 100% | Logs, inspect, stats, namespace debugging | podman logs, inspect, nsenter |
-| 🏷 Registry & Image Lifecycle Ops | █████████ 90% | Tagging, push/pull, save/load, digest validation | Docker Hub, UBI |
-| 🛡 DevSecOps Container Hardening | █████████ 90% | Secrets management, SELinux labeling, policy validation | podman secrets, ausearch |
+| 🏷 Registry & Image Lifecycle Ops | █████████░ 90% | Tagging, push/pull, save/load, digest validation | Docker Hub, UBI |
+| 🛡 DevSecOps Container Hardening | █████████░ 90% | Secrets management, SELinux labeling, policy validation | podman secrets, ausearch |
 
 ## 🏁 Proficiency Scale
 
 - ██████████ = Implemented End-to-End with Validation & Deployment  
-- █████████  = Advanced Practical Implementation  
-- ███████    = Strong Working Implementation  
-- █████      = Foundational + Applied Exposure  
+- █████████░ = Advanced Practical Implementation  
+- ███████░░░ = Strong Working Implementation  
+- █████░░░░░ = Foundational + Applied Exposure  
 
 This heatmap reflects **platform-level container engineering capability**, not isolated image builds — covering:
 
