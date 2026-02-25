@@ -1,4 +1,4 @@
-# 🛠️ Troubleshooting Guide — Lab 02: Using `RUN` Instruction Efficiently
+# 🛠️ Troubleshooting Guide — Lab 22: Using `RUN` Instruction Efficiently
 
 > This file captures common issues you may hit while working with `RUN` instructions, Alpine `apk`, Ubuntu `apt`, and Podman builds.
 
@@ -19,7 +19,7 @@
 - Test connectivity:
   ```bash
   ping -c 2 8.8.8.8
-````
+  ```
 
 * Test DNS:
 
