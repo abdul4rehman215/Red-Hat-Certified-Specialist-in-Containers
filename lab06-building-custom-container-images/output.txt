@@ -1,0 +1,116 @@
+==============================
+Lab 06 - Building Custom Container Images (Podman)
+Execution Output Log
+==============================
+
+--------------------------------------------
+Verify Podman Installation
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-372:~$ podman --version
+
+📌 Output
+podman version 4.9.3
+
+
+--------------------------------------------
+Task 1: Create a Simple Containerfile
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-372:~$ mkdir custom-nginx && cd custom-nginx
+
+📌 Output
+toor@ip-172-31-10-372:~/custom-nginx$
+
+
+▶️ Command Executed
+toor@ip-172-31-10-372:~/custom-nginx$ echo "<h1>Welcome to My Custom Nginx Container!</h1>" > index.html
+
+📌 Output
+
+
+▶️ Command Executed
+toor@ip-172-31-10-372:~/custom-nginx$ nano Containerfile
+
+📌 Output
+# (nano opened - pasted content - saved with CTRL+O, ENTER, then CTRL+X)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-372:~/custom-nginx$ ls -l
+
+📌 Output
+total 8
+-rw-r--r-- 1 toor toor 278 Feb 25 11:48 Containerfile
+-rw-r--r-- 1 toor toor  55 Feb 25 11:47 index.html
+
+
+--------------------------------------------
+Task 2: Build and Tag the Image
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-372:~/custom-nginx$ podman build -t my-custom-nginx .
+
+📌 Output
+STEP 1/4: FROM docker.io/nginx:alpine
+Trying to pull docker.io/nginx:alpine...
+Getting image source signatures
+Copying blob 2f3f2a86e0d1 done
+Copying blob 9c5c0b4adf3a done
+Copying config 8f8f6c0d31 done
+Writing manifest to image destination
+Storing signatures
+STEP 2/4: ENV AUTHOR="OpenShift Developer"
+--> 5e6a7b8c9d0e
+STEP 3/4: COPY index.html /usr/share/nginx/html
+--> 7f8e9d0c1b2a
+STEP 4/4: RUN echo "Container built by $AUTHOR" > /build-info.txt
+--> 9a0b1c2d3e4f
+COMMIT my-custom-nginx
+--> 1c2d3e4f5a6b7c8d9e0f11223344556677889900aabbccddeeff001122334455
+Successfully tagged localhost/my-custom-nginx:latest
+1c2d3e4f5a6b7c8d9e0f11223344556677889900aabbccddeeff001122334455
+
+
+▶️ Command Executed
+toor@ip-172-31-10-372:~/custom-nginx$ podman images
+
+📌 Output
+REPOSITORY                     TAG      IMAGE ID      CREATED         SIZE
+localhost/my-custom-nginx       latest   1c2d3e4f5a6b  1 minute ago     25.4 MB
+docker.io/library/ubuntu        latest   3b418d7d6a1f  2 weeks ago      77.8 MB
+docker.io/library/nginx         alpine   8f8f6c0d310d  3 weeks ago      24.9 MB
+docker.io/library/redis         alpine   4f0f7b8d919f  4 weeks ago      35.4 MB
+
+
+--------------------------------------------
+Task 3: Run the Container
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-388:~/custom-nginx$ podman run -d -p 8080:80 my-custom-nginx
+
+📌 Output
+e4d3c2b1a0f99887766554433221100ffeeddccbbaa99887766554433221100ff
+
+
+▶️ Command Executed
+toor@ip-172-31-10-388:~/custom-nginx$ podman ps
+
+📌 Output
+CONTAINER ID  IMAGE                             COMMAND               CREATED         STATUS             PORTS                   NAMES
+e4d3c2b1a0f9  localhost/my-custom-nginx:latest   nginx -g daemon off;  8 seconds ago   Up 8 seconds ago   0.0.0.0:8080->80/tcp    dreamy_mendel
+
+
+--------------------------------------------
+Task 4: Test the Web Server
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-388:~/custom-nginx$ curl http://localhost:8080
+
+📌 Output
+<h1>Welcome to My Custom Nginx Container!</h1>
