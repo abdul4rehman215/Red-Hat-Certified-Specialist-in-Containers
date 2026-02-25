@@ -1,0 +1,208 @@
+==============================
+Lab 09 - Using ENTRYPOINT and CMD in Containerfiles
+Execution Output Log
+==============================
+
+--------------------------------------------
+Lab Setup
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-466:~$ mkdir entrypoint-cmd-lab && cd entrypoint-cmd-lab
+
+📌 Output
+toor@ip-172-31-10-466:~/entrypoint-cmd-lab$
+
+
+--------------------------------------------
+Task 1: Writing a Containerfile with ENTRYPOINT and CMD
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-466:~/entrypoint-cmd-lab$ nano Containerfile
+
+📌 Output
+# (nano opened - pasted content - saved with CTRL+O, ENTER, then CTRL+X)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-466:~/entrypoint-cmd-lab$ cat Containerfile
+
+📌 Output
+# Base image
+FROM registry.access.redhat.com/ubi9/ubi-minimal
+# Set ENTRYPOINT to a shell script
+ENTRYPOINT ["echo", "Entrypoint says:"]
+# Set default CMD arguments
+CMD ["Default CMD message"]
+
+
+▶️ Command Executed
+toor@ip-172-31-10-466:~/entrypoint-cmd-lab$ podman build -t entrypoint-demo .
+
+📌 Output
+STEP 1/3: FROM registry.access.redhat.com/ubi9/ubi-minimal
+Trying to pull registry.access.redhat.com/ubi9/ubi-minimal:latest...
+Getting image source signatures
+Copying blob 4c1f5c3d2a10 done
+Copying config 8a7b6c5d4e done
+Writing manifest to image destination
+Storing signatures
+STEP 2/3: ENTRYPOINT ["echo", "Entrypoint says:"]
+--> 1a2b3c4d5e6f
+STEP 3/3: CMD ["Default CMD message"]
+COMMIT entrypoint-demo
+--> 99887766554433221100ffeeddccbbaa99887766554433221100ffeeddccbbaa
+Successfully tagged localhost/entrypoint-demo:latest
+99887766554433221100ffeeddccbbaa99887766554433221100ffeeddccbbaa
+
+
+--------------------------------------------
+Task 2: Testing Container Behavior
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-466:~/entrypoint-cmd-lab$ podman run --rm entrypoint-demo
+
+📌 Output
+Entrypoint says: Default CMD message
+
+
+▶️ Command Executed
+toor@ip-172-31-10-466:~/entrypoint-cmd-lab$ podman run --rm entrypoint-demo "Custom message"
+
+📌 Output
+Entrypoint says: Custom message
+
+
+--------------------------------------------
+Task 3: Advanced ENTRYPOINT/CMD Combinations (Script-based)
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-466:~/entrypoint-cmd-lab$ nano greet.sh
+
+📌 Output
+# (nano opened - pasted content - saved with CTRL+O, ENTER, then CTRL+X)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-466:~/entrypoint-cmd-lab$ chmod +x greet.sh
+
+📌 Output
+
+
+▶️ Command Executed
+toor@ip-172-31-10-466:~/entrypoint-cmd-lab$ ls -l greet.sh
+
+📌 Output
+-rwxr-xr-x 1 toor toor 42 Feb 25 13:05 greet.sh
+
+
+▶️ Command Executed
+toor@ip-172-31-10-466:~/entrypoint-cmd-lab$ nano Containerfile
+
+📌 Output
+# (nano opened - updated content - saved with CTRL+O, ENTER, then CTRL+X)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-466:~/entrypoint-cmd-lab$ cat Containerfile
+
+📌 Output
+FROM registry.access.redhat.com/ubi9/ubi-minimal
+COPY greet.sh /usr/local/bin/
+ENTRYPOINT ["/usr/local/bin/greet.sh"]
+CMD ["OpenShift Lab", "Red Hat"]
+
+
+▶️ Command Executed
+toor@ip-172-31-10-466:~/entrypoint-cmd-lab$ podman build -t greet-demo .
+
+📌 Output
+STEP 1/4: FROM registry.access.redhat.com/ubi9/ubi-minimal
+--> 8a7b6c5d4e0f
+STEP 2/4: COPY greet.sh /usr/local/bin/
+--> 1b2c3d4e5f60
+STEP 3/4: ENTRYPOINT ["/usr/local/bin/greet.sh"]
+--> 2c3d4e5f6071
+STEP 4/4: CMD ["OpenShift Lab", "Red Hat"]
+COMMIT greet-demo
+--> aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899
+Successfully tagged localhost/greet-demo:latest
+aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899
+
+
+▶️ Command Executed
+toor@ip-172-31-10-466:~/entrypoint-cmd-lab$ podman run --rm greet-demo
+
+📌 Output
+Welcome to OpenShift Lab from Red Hat
+
+
+▶️ Command Executed
+toor@ip-172-31-10-466:~/entrypoint-cmd-lab$ podman run --rm greet-demo "Container Workshop" "Instructor"
+
+📌 Output
+Welcome to Container Workshop from Instructor
+
+
+--------------------------------------------
+Task 4: Overriding ENTRYPOINT
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-466:~/entrypoint-cmd-lab$ podman run --rm --entrypoint echo greet-demo "This completely replaces the ENTRYPOINT"
+
+📌 Output
+This completely replaces the ENTRYPOINT
+
+
+--------------------------------------------
+Task 5: Understanding Shell vs Exec Form
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-466:~/entrypoint-cmd-lab$ nano Containerfile
+
+📌 Output
+# (nano opened - updated content - saved with CTRL+O, ENTER, then CTRL+X)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-466:~/entrypoint-cmd-lab$ podman build -t shellform-demo .
+
+📌 Output
+STEP 1/3: FROM registry.access.redhat.com/ubi9/ubi-minimal
+--> 8a7b6c5d4e0f
+STEP 2/3: ENTRYPOINT echo "Shell form ENTRYPOINT:"
+--> 1122aabb3344
+STEP 3/3: CMD echo "Shell form CMD"
+COMMIT shellform-demo
+--> 0aa1bb2cc3dd4ee55ff6677889900aa1bb2cc3dd4ee55ff6677889900aa1bb2c
+Successfully tagged localhost/shellform-demo:latest
+0aa1bb2cc3dd4ee55ff6677889900aa1bb2cc3dd4ee55ff6677889900aa1bb2c
+
+
+▶️ Command Executed
+toor@ip-172-31-10-466:~/entrypoint-cmd-lab$ podman run --rm shellform-demo
+
+📌 Output
+Shell form ENTRYPOINT:
+Shell form CMD
+
+
+--------------------------------------------
+Cleanup
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-466:~/entrypoint-cmd-lab$ podman rmi entrypoint-demo greet-demo shellform-demo
+
+📌 Output
+Untagged: localhost/entrypoint-demo:latest
+Deleted: 99887766554433221100ffeeddccbbaa99887766554433221100ffeeddccbbaa
+Untagged: localhost/greet-demo:latest
+Deleted: aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899
+Untagged: localhost/shellform-demo:latest
+Deleted: 0aa1bb2cc3dd4ee55ff6677889900aa1bb2cc3dd4ee55ff6677889900aa1bb2c
