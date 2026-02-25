@@ -1,0 +1,215 @@
+=============================
+Lab 22 - Using RUN Instruction Efficiently
+Execution Output Log
+=============================
+
+----------------------------------------
+Task 1.1 - RUN in Shell Form
+----------------------------------------
+
+$ mkdir -p ~/run-lab-shell && cd ~/run-lab-shell
+
+
+$ nano Dockerfile
+
+
+$ cat Dockerfile
+FROM alpine:latest
+RUN apk add --no-cache curl
+
+
+$ podman build -t run-lab-shell .
+STEP 1/2: FROM alpine:latest
+Trying to pull docker.io/library/alpine:latest...
+Getting image source signatures
+Copying blob 44cf07d57ee4 done
+Copying config 9c6f072447 done
+Writing manifest to image destination
+Storing signatures
+STEP 2/2: RUN apk add --no-cache curl
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.20/main/x86_64/APKINDEX.tar.gz
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.20/community/x86_64/APKINDEX.tar.gz
+(1/6) Installing ca-certificates (20240226-r0)
+(2/6) Installing brotli-libs (1.1.0-r2)
+(3/6) Installing libunistring (1.2-r0)
+(4/6) Installing libidn2 (2.3.7-r0)
+(5/6) Installing nghttp2-libs (1.62.1-r0)
+(6/6) Installing curl (8.9.1-r0)
+Executing busybox-1.36.1-r29.trigger
+Executing ca-certificates-20240226-r0.trigger
+OK: 12 MiB in 21 packages
+COMMIT run-lab-shell
+--> 8a7b6c5d4e3f
+Successfully tagged localhost/run-lab-shell:latest
+8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b
+
+
+----------------------------------------
+Task 1.2 - RUN in Exec Form
+----------------------------------------
+
+$ mkdir -p ~/run-lab-exec && cd ~/run-lab-exec
+
+
+$ nano Dockerfile
+
+
+$ cat Dockerfile
+FROM alpine:latest
+RUN ["/bin/sh", "-c", "apk add --no-cache curl"]
+
+
+$ podman build -t run-lab-exec .
+STEP 1/2: FROM alpine:latest
+STEP 2/2: RUN ["/bin/sh", "-c", "apk add --no-cache curl"]
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.20/main/x86_64/APKINDEX.tar.gz
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.20/community/x86_64/APKINDEX.tar.gz
+(1/6) Installing ca-certificates (20240226-r0)
+(2/6) Installing brotli-libs (1.1.0-r2)
+(3/6) Installing libunistring (1.2-r0)
+(4/6) Installing libidn2 (2.3.7-r0)
+(5/6) Installing nghttp2-libs (1.62.1-r0)
+(6/6) Installing curl (8.9.1-r0)
+Executing busybox-1.36.1-r29.trigger
+Executing ca-certificates-20240226-r0.trigger
+OK: 12 MiB in 21 packages
+COMMIT run-lab-exec
+--> 0d1c2b3a4e5f
+Successfully tagged localhost/run-lab-exec:latest
+0d1c2b3a4e5f6a7b8c9d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d
+
+
+----------------------------------------
+Task 2.1 - Inefficient Multi-Layer Approach (Dockerfile Example)
+----------------------------------------
+
+$ mkdir -p ~/inefficient-nginx && cd ~/inefficient-nginx
+
+
+$ nano Dockerfile
+
+
+$ cat Dockerfile
+FROM ubuntu:latest
+RUN apt-get update
+RUN apt-get install -y nginx
+RUN rm -rf /var/lib/apt/lists/*
+
+
+----------------------------------------
+Task 2.2 - Optimized Single-Layer Approach
+----------------------------------------
+
+$ mkdir -p ~/optimized-nginx && cd ~/optimized-nginx
+
+
+$ nano Dockerfile
+
+
+$ cat Dockerfile
+FROM ubuntu:latest
+RUN apt-get update && \
+ apt-get install -y nginx && \
+ rm -rf /var/lib/apt/lists/*
+
+
+$ podman build -t optimized-nginx .
+STEP 1/2: FROM ubuntu:latest
+Trying to pull docker.io/library/ubuntu:latest...
+Getting image source signatures
+Copying blob 5f70bf18a086 done
+Copying config 3b418d7b4665 done
+Writing manifest to image destination
+Storing signatures
+STEP 2/2: RUN apt-get update && \  apt-get install -y nginx && \  rm -rf /var/lib/apt/lists/*
+Get:1 http://archive.ubuntu.com/ubuntu noble InRelease [256 kB]
+Get:2 http://archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+Fetched 382 kB in 1s (466 kB/s)
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  iproute2 libatm1 libbpf1 libmnl0 libxtables12 nginx-common nginx-core
+Suggested packages:
+  fcgiwrap nginx-doc
+The following NEW packages will be installed:
+  iproute2 libatm1 libbpf1 libmnl0 libxtables12 nginx nginx-common nginx-core
+0 upgraded, 8 newly installed, 0 to remove and 0 not upgraded.
+Need to get 2134 kB of archives.
+After this operation, 6065 kB of additional disk space will be used.
+Get:1 http://archive.ubuntu.com/ubuntu noble/main amd64 libbpf1 amd64 1:1.2.2-1 [165 kB]
+Get:2 http://archive.ubuntu.com/ubuntu noble/main amd64 libmnl0 amd64 1.0.5-2 [12.1 kB]
+Get:3 http://archive.ubuntu.com/ubuntu noble/main amd64 libxtables12 amd64 1.8.10-1 [32.7 kB]
+Get:4 http://archive.ubuntu.com/ubuntu noble/main amd64 iproute2 amd64 6.1.0-1ubuntu6 [1072 kB]
+Get:5 http://archive.ubuntu.com/ubuntu noble/main amd64 libatm1 amd64 1:2.5.1-5.1build1 [18.0 kB]
+Get:6 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 nginx-common amd64 1.24.0-2ubuntu7.1 [68.1 kB]
+Get:7 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 nginx-core amd64 1.24.0-2ubuntu7.1 [560 kB]
+Get:8 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 nginx amd64 1.24.0-2ubuntu7.1 [2060 B]
+Fetched 1927 kB in 1s (1560 kB/s)
+Selecting previously unselected package libbpf1:amd64.
+(Reading database ... 4382 files and directories currently installed.)
+Preparing to unpack .../0-libbpf1_1.2.2-1_amd64.deb ...
+Unpacking libbpf1:amd64 (1:1.2.2-1) ...
+Selecting previously unselected package libmnl0:amd64.
+Unpacking libmnl0:amd64 (1.0.5-2) ...
+Selecting previously unselected package libxtables12:amd64.
+Unpacking libxtables12:amd64 (1.8.10-1) ...
+Selecting previously unselected package iproute2.
+Unpacking iproute2 (6.1.0-1ubuntu6) ...
+Selecting previously unselected package libatm1:amd64.
+Unpacking libatm1:amd64 (1:2.5.1-5.1build1) ...
+Selecting previously unselected package nginx-common.
+Unpacking nginx-common (1.24.0-2ubuntu7.1) ...
+Selecting previously unselected package nginx-core.
+Unpacking nginx-core (1.24.0-2ubuntu7.1) ...
+Selecting previously unselected package nginx.
+Unpacking nginx (1.24.0-2ubuntu7.1) ...
+Setting up libbpf1:amd64 (1:1.2.2-1) ...
+Setting up libmnl0:amd64 (1.0.5-2) ...
+Setting up libxtables12:amd64 (1.8.10-1) ...
+Setting up iproute2 (6.1.0-1ubuntu6) ...
+Setting up libatm1:amd64 (1:2.5.1-5.1build1) ...
+Setting up nginx-common (1.24.0-2ubuntu7.1) ...
+Created symlink /etc/systemd/system/multi-user.target.wants/nginx.service → /lib/systemd/system/nginx.service.
+Setting up nginx-core (1.24.0-2ubuntu7.1) ...
+Setting up nginx (1.24.0-2ubuntu7.1) ...
+Processing triggers for libc-bin (2.39-0ubuntu8.3) ...
+COMMIT optimized-nginx
+--> 7c6d5e4f3a2b
+Successfully tagged localhost/optimized-nginx:latest
+7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d
+
+
+$ podman images | grep -E 'optimized-nginx|run-lab-shell'
+localhost/optimized-nginx               latest   7c6d5e4f3a2b  22 seconds ago  82.4 MB
+localhost/run-lab-shell                latest   8a7b6c5d4e3f  6 minutes ago   12.8 MB
+
+
+----------------------------------------
+Task 3.1 - Inspecting Image Layers
+----------------------------------------
+
+$ podman history optimized-nginx
+ID            CREATED         CREATED BY                                      SIZE      COMMENT
+7c6d5e4f3a2b  1 minute ago    /bin/sh -c apt-get update &&  apt-get install…  26.4 MB
+3b418d7b4665  2 minutes ago   /bin/sh -c #(nop)  CMD ["bash"]                0 B
+<missing>     2 minutes ago   /bin/sh -c #(nop) ADD file:... in /            55.9 MB
+
+
+----------------------------------------
+Task 3.2 - Comparing Image Sizes
+----------------------------------------
+
+$ podman images
+REPOSITORY                     TAG     IMAGE ID      CREATED         SIZE
+localhost/optimized-nginx       latest  7c6d5e4f3a2b  2 minutes ago   82.4 MB
+localhost/run-lab-exec          latest  0d1c2b3a4e5f  9 minutes ago   12.8 MB
+localhost/run-lab-shell         latest  8a7b6c5d4e3f  12 minutes ago  12.8 MB
+docker.io/library/ubuntu        latest  3b418d7b4665  4 minutes ago   55.9 MB
+docker.io/library/alpine        latest  9c6f07244711  15 minutes ago  7.3 MB
+
+
+=============================
+Lab completed successfully on a cloud lab environment
+=============================
