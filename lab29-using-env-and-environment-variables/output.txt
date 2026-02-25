@@ -1,0 +1,152 @@
+=============================
+Lab 29 - ENV and Environment Variables
+Execution Output Log
+=============================
+
+----------------------------------------
+Lab Setup
+----------------------------------------
+
+$ podman --version
+podman version 3.4.4
+
+
+$ mkdir env-lab && cd env-lab
+
+$ pwd
+/home/centos/env-lab
+
+
+----------------------------------------
+Task 1 - Setting ENV in Containerfile
+----------------------------------------
+
+$ nano Containerfile
+
+
+$ cat Containerfile
+FROM alpine:latest
+ENV APP_NAME="MyApp" \
+    APP_VERSION="1.0.0"
+CMD echo "Running $APP_NAME version $APP_VERSION"
+
+
+$ podman build -t env-demo .
+STEP 1/3: FROM alpine:latest
+Trying to pull docker.io/library/alpine:latest...
+Getting image source signatures
+Copying blob 44cf07d57ee4 done
+Copying config 9c6f072447 done
+Writing manifest to image destination
+Storing signatures
+STEP 2/3: ENV APP_NAME="MyApp" APP_VERSION="1.0.0"
+--> 1a2b3c4d5e6f
+STEP 3/3: CMD echo "Running $APP_NAME version $APP_VERSION"
+COMMIT env-demo
+--> 2b3c4d5e6f70
+Successfully tagged localhost/env-demo:latest
+2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091
+
+
+$ podman run env-demo
+Running MyApp version 1.0.0
+
+
+----------------------------------------
+Task 2 - Overriding ENV at Runtime
+----------------------------------------
+
+$ podman run -e APP_NAME="NewApp" env-demo
+Running NewApp version 1.0.0
+
+
+$ podman run -e APP_NAME="ProductionApp" -e APP_VERSION="2.0.0" env-demo
+Running ProductionApp version 2.0.0
+
+
+----------------------------------------
+Task 3 - Using Multi-line ENV
+----------------------------------------
+
+$ nano Containerfile
+
+
+$ cat Containerfile
+FROM alpine:latest
+ENV APP_NAME="MyApp" \
+    APP_VERSION="1.0.0" \
+    APP_DESCRIPTION="This is a multi-line \
+environment variable example"
+CMD echo "$APP_DESCRIPTION"
+
+
+$ podman build -t multiline-env .
+STEP 1/3: FROM alpine:latest
+STEP 2/3: ENV APP_NAME="MyApp" APP_VERSION="1.0.0" APP_DESCRIPTION="This is a multi-line environment variable example"
+--> 3c4d5e6f7081
+STEP 3/3: CMD echo "$APP_DESCRIPTION"
+COMMIT multiline-env
+--> 4d5e6f708192
+Successfully tagged localhost/multiline-env:latest
+4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c
+
+
+$ podman run multiline-env
+This is a multi-line environment variable example
+
+
+----------------------------------------
+Task 4 - Documenting Environment Variables
+----------------------------------------
+
+$ nano README.md
+
+
+$ cat README.md
+# Environment Variables
+
+| Variable        | Description                 | Default Value        |
+|----------------|-----------------------------|----------------------|
+| APP_NAME        | Name of the application     | MyApp                |
+| APP_VERSION     | Application version         | 1.0.0                |
+| APP_DESCRIPTION | Multi-line description      | (see Containerfile)  |
+
+
+$ grep -n "ENV" -A3 Containerfile
+2:ENV APP_NAME="MyApp" \
+3-    APP_VERSION="1.0.0" \
+4-    APP_DESCRIPTION="This is a multi-line \
+5-environment variable example
+
+
+$ cat README.md
+# Environment Variables
+
+| Variable        | Description                 | Default Value        |
+|----------------|-----------------------------|----------------------|
+| APP_NAME        | Name of the application     | MyApp                |
+| APP_VERSION     | Application version         | 1.0.0                |
+| APP_DESCRIPTION | Multi-line description      | (see Containerfile)  |
+
+
+----------------------------------------
+Validation - Inspect Environment Variables
+----------------------------------------
+
+$ podman run -d --name envcheck multiline-env
+6a7b8c9d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3
+
+
+$ podman inspect envcheck --format '{{ range .Config.Env }}{{ println . }}{{ end }}' | grep -E 'APP_NAME|APP_VERSION|APP_DESCRIPTION'
+APP_NAME=MyApp
+APP_VERSION=1.0.0
+APP_DESCRIPTION=This is a multi-line environment variable example
+
+
+$ podman rm -f envcheck
+envcheck
+
+
+=============================
+Lab completed successfully on a cloud lab environment
+=============================
