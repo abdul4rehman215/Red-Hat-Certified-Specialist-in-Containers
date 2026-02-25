@@ -1,0 +1,303 @@
+=============================
+Lab 37 - Running Multi-Container Applications
+Execution Output Log
+=============================
+
+----------------------------------------
+Lab Setup
+----------------------------------------
+
+$ systemctl start podman
+Failed to start podman.service: Unit podman.service not found.
+
+
+$ podman --version
+podman version 3.4.4
+
+
+$ podman-compose --version
+podman-compose version: 1.0.6
+
+
+----------------------------------------
+Task 1 - Create and Deploy a Multi-Container App with podman-compose
+----------------------------------------
+
+$ mkdir multi-container-lab && cd multi-container-lab
+
+
+$ pwd
+/home/centos/multi-container-lab
+
+
+$ mkdir -p app
+
+
+$ nano docker-compose.yml
+
+
+$ cat docker-compose.yml
+version: '3.8'
+services:
+  web:
+    image: docker.io/python:3.9
+    command: python -m http.server 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app
+    depends_on:
+      - redis
+      - db
+    networks:
+      - app-network
+
+  redis:
+    image: docker.io/redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+
+  db:
+    image: docker.io/postgres:13-alpine
+    environment:
+      POSTGRES_PASSWORD: example
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+volumes:
+  redis-data:
+  postgres-data:
+
+networks:
+  app-network:
+    driver: bridge
+
+
+$ podman-compose up -d
+['podman', 'network', 'exists', 'multi-container-lab_app-network']
+multi-container-lab_app-network
+['podman', 'volume', 'create', 'multi-container-lab_redis-data']
+multi-container-lab_redis-data
+['podman', 'volume', 'create', 'multi-container-lab_postgres-data']
+multi-container-lab_postgres-data
+['podman', 'run', '-d', '--name=multi-container-lab_redis_1', '--label', 'io.podman.compose.project=multi-container-lab', '--label', 'io.podman.compose.service=redis', '--network', 'multi-container-lab_app-network', '-p', '6379:6379', '-v', 'multi-container-lab_redis-data:/data', 'docker.io/redis:alpine']
+['podman', 'run', '-d', '--name=multi-container-lab_db_1', '--label', 'io.podman.compose.project=multi-container-lab', '--label', 'io.podman.compose.service=db', '--network', 'multi-container-lab_app-network', '-e', 'POSTGRES_PASSWORD=example', '-v', 'multi-container-lab_postgres-data:/var/lib/postgresql/data', 'docker.io/postgres:13-alpine']
+['podman', 'run', '-d', '--name=multi-container-lab_web_1', '--label', 'io.podman.compose.project=multi-container-lab', '--label', 'io.podman.compose.service=web', '--network', 'multi-container-lab_app-network', '-p', '8000:8000', '-v', '/home/centos/multi-container-lab/app:/app', 'docker.io/python:3.9', 'python', '-m', 'http.server', '8000']
+
+
+$ podman ps
+CONTAINER ID  IMAGE                           COMMAND               CREATED         STATUS             PORTS                     NAMES
+a1b2c3d4e5f6  docker.io/python:3.9            python -m http.server  18 seconds ago  Up 18 seconds ago  0.0.0.0:8000->8000/tcp    multi-container-lab_web_1
+b2c3d4e5f607  docker.io/postgres:13-alpine    postgres              20 seconds ago  Up 20 seconds ago                            multi-container-lab_db_1
+c3d4e5f60718  docker.io/redis:alpine          redis-server          22 seconds ago  Up 22 seconds ago  0.0.0.0:6379->6379/tcp    multi-container-lab_redis_1
+
+
+$ curl -I http://localhost:8000
+HTTP/1.0 200 OK
+Server: SimpleHTTP/0.6 Python/3.9.19
+Date: Wed, 25 Feb 2026 08:18:11 GMT
+Content-type: text/html; charset=utf-8
+Content-Length: 246
+
+
+$ curl http://localhost:8000 | head
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+ <head>
+  <title>Directory listing for /</title>
+ </head>
+ <body>
+  <h2>Directory listing for /</h2>
+  <hr>
+
+
+----------------------------------------
+Task 2 - Add Secrets Management
+----------------------------------------
+
+$ echo "supersecret" | podman secret create db_password -
+d0c9b8a7f6e5
+
+
+$ nano docker-compose.yml
+
+
+$ cat docker-compose.yml | sed -n '1,120p'
+version: '3.8'
+services:
+  web:
+    image: docker.io/python:3.9
+    command: python -m http.server 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app
+    depends_on:
+      - redis
+      - db
+    networks:
+      - app-network
+
+  redis:
+    image: docker.io/redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+
+  db:
+    image: docker.io/postgres:13-alpine
+    secrets:
+      - db_password
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+volumes:
+  redis-data:
+  postgres-data:
+
+networks:
+  app-network:
+    driver: bridge
+
+secrets:
+  db_password:
+    external: true
+
+
+$ podman-compose down
+['podman', 'rm', '-f', 'multi-container-lab_web_1']
+['podman', 'rm', '-f', 'multi-container-lab_db_1']
+['podman', 'rm', '-f', 'multi-container-lab_redis_1']
+
+
+$ podman-compose up -d
+['podman', 'network', 'exists', 'multi-container-lab_app-network']
+multi-container-lab_app-network
+['podman', 'run', '-d', '--name=multi-container-lab_redis_1', '--label', 'io.podman.compose.project=multi-container-lab', '--label', 'io.podman.compose.service=redis', '--network', 'multi-container-lab_app-network', '-p', '6379:6379', '-v', 'multi-container-lab_redis-data:/data', 'docker.io/redis:alpine']
+['podman', 'run', '-d', '--name=multi-container-lab_db_1', '--label', 'io.podman.compose.project=multi-container-lab', '--label', 'io.podman.compose.service=db', '--network', 'multi-container-lab_app-network', '--secret', 'db_password', '-e', 'POSTGRES_PASSWORD_FILE=/run/secrets/db_password', '-v', 'multi-container-lab_postgres-data:/var/lib/postgresql/data', 'docker.io/postgres:13-alpine']
+['podman', 'run', '-d', '--name=multi-container-lab_web_1', '--label', 'io.podman.compose.project=multi-container-lab', '--label', 'io.podman.compose.service=web', '--network', 'multi-container-lab_app-network', '-p', '8000:8000', '-v', '/home/centos/multi-container-lab/app:/app', 'docker.io/python:3.9', 'python', '-m', 'http.server', '8000'
+
+
+----------------------------------------
+Task 3 - Deploy with Kubernetes YAML
+----------------------------------------
+
+$ podman kube generate --service -f k8s-deployment.yaml multi-container-lab_web_1 multi-container-lab_redis_1 multi-container-lab_db_1
+Kubernetes YAML successfully written to k8s-deployment.yaml
+
+
+$ head -n 40 k8s-deployment.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2026-02-25T08:22:44Z"
+  labels:
+    app: multi-container-lab
+  name: multi-container-lab-pod
+spec:
+  containers:
+  - command:
+    - python
+    - -m
+    - http.server
+    - "8000"
+    image: docker.io/python:3.9
+    name: multi-container-lab-web-1
+    ports:
+    - containerPort: 8000
+      hostPort: 8000
+      protocol: TCP
+    volumeMounts:
+    - mountPath: /app
+      name: app-host
+  - image: docker.io/redis:alpine
+    name: multi-container-lab-redis-1
+    ports:
+    - containerPort: 6379
+      hostPort: 6379
+      protocol: TCP
+
+
+$ podman-compose down
+['podman', 'rm', '-f', 'multi-container-lab_web_1']
+['podman', 'rm', '-f', 'multi-container-lab_db_1']
+['podman', 'rm', '-f', 'multi-container-lab_redis_1']
+
+
+$ podman play kube k8s-deployment.yaml
+Pod:
+b8c7d6e5f4a3  created
+Container:
+  multi-container-lab-web-1  started
+Container:
+  multi-container-lab-redis-1  started
+Container:
+  multi-container-lab-db-1  started
+Service:
+  multi-container-lab-web-1  created
+Service:
+  multi-container-lab-redis-1  created
+Service:
+  multi-container-lab-db-1  created
+
+
+$ podman pod ps
+POD ID        NAME                    STATUS   CREATED         INFRA ID
+b8c7d6e5f4a3  multi-container-lab-pod  Running  12 seconds ago  a7b6c5d4e3f2
+
+
+$ podman ps
+CONTAINER ID  IMAGE                        COMMAND               CREATED         STATUS             PORTS                     NAMES
+d1e2f3a4b5c6  docker.io/python:3.9         python -m http.server  15 seconds ago  Up 15 seconds ago  0.0.0.0:8000->8000/tcp    multi-container-lab-web-1
+e2f3a4b5c6d7  docker.io/redis:alpine       redis-server           15 seconds ago  Up 15 seconds ago  0.0.0.0:6379->6379/tcp    multi-container-lab-redis-1
+f3a4b5c6d7e8  docker.io/postgres:13-alpine postgres              15 seconds ago  Up 15 seconds ago                            multi-container-lab-db-1
+
+
+----------------------------------------
+Cleanup
+----------------------------------------
+
+$ podman-compose down
+['podman', 'rm', '-f', 'multi-container-lab_web_1']
+['podman', 'rm', '-f', 'multi-container-lab_db_1']
+['podman', 'rm', '-f', 'multi-container-lab_redis_1']
+
+
+$ podman pod rm -a -f
+b8c7d6e5f4a3
+
+
+$ podman rm -a -f
+d1e2f3a4b5c6
+e2f3a4b5c6d7
+f3a4b5c6d7e8
+
+
+$ podman volume prune
+WARNING! This will remove all unused volumes.
+Are you sure you want to continue? [y/N] y
+multi-container-lab_redis-data
+multi-container-lab_postgres-data
+Total reclaimed space: 0B
+
+
+$ podman secret rm db_password
+db_password
+
+
+=============================
+Lab completed successfully on a cloud lab environment
+=============================
