@@ -1,0 +1,209 @@
+==============================
+Lab 02 - Exploring Podman CLI
+Execution Output Log
+==============================
+
+--------------------------------------------
+Setup Verification
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-202:~$ podman --version
+
+📌 Output
+podman version 4.9.3
+
+
+--------------------------------------------
+Task 1: Listing Containers
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-202:~$ podman ps
+
+📌 Output
+CONTAINER ID  IMAGE       COMMAND     CREATED     STATUS      PORTS       NAMES
+
+
+▶️ Command Executed
+toor@ip-172-31-10-202:~$ podman ps -a
+
+📌 Output
+CONTAINER ID  IMAGE                                 COMMAND     CREATED         STATUS                     PORTS       NAMES
+b7f4b9d3a0e5  docker.io/library/hello-world:latest   /hello      12 minutes ago  Exited (0) 12 minutes ago              hopeful_morse
+e3c2a11f9d4a  docker.io/library/alpine:latest        sh          6 minutes ago   Exited (0) 6 minutes ago               epic_wing
+
+
+--------------------------------------------
+Task 2: Running a Container (Interactive)
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-202:~$ podman run -it --name my_alpine alpine sh
+
+📌 Output
+/ #
+
+
+▶️ Command Executed
+/ # exit
+
+📌 Output
+toor@ip-172-31-10-202:~$
+
+
+▶️ Command Executed
+toor@ip-172-31-10-202:~$ podman ps
+
+📌 Output
+CONTAINER ID  IMAGE       COMMAND     CREATED     STATUS      PORTS       NAMES
+
+
+--------------------------------------------
+Task 3: Stopping a Container
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-202:~$ podman start my_alpine
+
+📌 Output
+my_alpine
+
+
+▶️ Command Executed
+toor@ip-172-31-10-202:~$ podman stop my_alpine
+
+📌 Output
+my_alpine
+
+
+▶️ Command Executed
+toor@ip-172-31-10-202:~$ podman ps -a
+
+📌 Output
+CONTAINER ID  IMAGE                                 COMMAND     CREATED         STATUS                      PORTS       NAMES
+2c1c52cced6a  docker.io/library/alpine:latest        sh          2 minutes ago   Exited (137) 6 seconds ago               my_alpine
+b7f4b9d3a0e5  docker.io/library/hello-world:latest   /hello      15 minutes ago  Exited (0) 15 minutes ago               hopeful_morse
+e3c2a11f9d4a  docker.io/library/alpine:latest        sh          9 minutes ago   Exited (0) 9 minutes ago                epic_wing
+
+
+--------------------------------------------
+Task 4: Restarting a Container
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-202:~$ podman restart my_alpine
+
+📌 Output
+my_alpine
+
+
+▶️ Command Executed
+toor@ip-172-31-10-202:~$ podman ps
+
+📌 Output
+CONTAINER ID  IMAGE                            COMMAND  CREATED         STATUS             PORTS  NAMES
+2c1c52cced6a  docker.io/library/alpine:latest   sh       3 minutes ago   Up 2 seconds ago          my_alpine
+
+
+--------------------------------------------
+Task 5: Removing a Container
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-202:~$ podman stop my_alpine
+
+📌 Output
+my_alpine
+
+
+▶️ Command Executed
+toor@ip-172-31-10-202:~$ podman rm my_alpine
+
+📌 Output
+2c1c52cced6a6e5f0b9a4c02f6c18d1b8a1f3e6a6b2f4d83f0d8b7d2c8f319aa
+
+
+▶️ Command Executed
+toor@ip-172-31-10-202:~$ podman ps -a
+
+📌 Output
+CONTAINER ID  IMAGE                                 COMMAND     CREATED         STATUS                     PORTS       NAMES
+b7f4b9d3a0e5  docker.io/library/hello-world:latest   /hello      18 minutes ago  Exited (0) 18 minutes ago              hopeful_morse
+e3c2a11f9d4a  docker.io/library/alpine:latest        sh          12 minutes ago  Exited (0) 12 minutes ago              epic_wing
+
+
+--------------------------------------------
+Task 6: Inspecting Container Details
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-219:~$ podman run -d --name nginx_container nginx
+
+📌 Output
+9ad3e11a5a3c6e8d68fba26e19d2d9427b8e0d3e7227d8ab9c0b83c0d9f32b11
+
+
+▶️ Command Executed
+toor@ip-172-31-10-219:~$ podman inspect nginx_container
+
+📌 Output
+[
+  {
+    "Id": "9ad3e11a5a3c6e8d68fba26e19d2d9427b8e0d3e7227d8ab9c0b83c0d9f32b11",
+    "Created": "2026-02-25T11:12:43.812345678Z",
+    "Path": "/docker-entrypoint.sh",
+    "Args": [
+      "nginx",
+      "-g",
+      "daemon off;"
+    ],
+    "State": {
+      "OciVersion": "1.1.0",
+      "Status": "running",
+      "Running": true,
+      "Paused": false,
+      "Restarting": false,
+      "OOMKilled": false,
+      "Dead": false,
+      "Pid": 19342,
+      "ExitCode": 0,
+      "Error": "",
+      "StartedAt": "2026-02-25T11:12:44.112233445Z",
+      "FinishedAt": "0001-01-01T00:00:00Z",
+      "Healthcheck": null
+    },
+    "ImageName": "docker.io/library/nginx:latest",
+    "Name": "nginx_container",
+    "NetworkSettings": {
+      "Networks": {
+        "podman": {
+          "NetworkID": "podman",
+          "IPAddress": "10.88.0.12",
+          "Gateway": "10.88.0.1"
+        }
+      }
+    },
+    "Config": {
+      "Env": [
+        "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "NGINX_VERSION=1.27.0",
+        "NJS_VERSION=0.8.5",
+        "PKG_RELEASE=1~bookworm"
+      ],
+      "Cmd": [
+        "nginx",
+        "-g",
+        "daemon off;"
+      ]
+    }
+  }
+]
+
+
+▶️ Command Executed
+toor@ip-172-31-10-219:~$ podman stop nginx_container && podman rm nginx_container
+
+📌 Output
+nginx_container
+9ad3e11a5a3c6e8d68fba26e19d2d9427b8e0d3e7227d8ab9c0b83c0d9f32b11
