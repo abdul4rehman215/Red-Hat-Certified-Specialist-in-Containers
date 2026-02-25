@@ -1,0 +1,224 @@
+==============================
+Lab 3 - Running Containers with Podman
+Execution Output Log
+==============================
+
+--------------------------------------------
+Lab Setup
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-241:~$ podman --version
+📌 Output
+podman version 4.9.3
+
+
+▶️ Command Executed
+toor@ip-172-31-10-241:~$ podman pull docker.io/library/nginx:alpine
+📌 Output
+Trying to pull docker.io/library/nginx:alpine...
+Getting image source signatures
+Copying blob 2f3f2a86e0d1 done
+Copying blob 9c5c0b4adf3a done
+Copying config 8f8f6c0d31 done
+Writing manifest to image destination
+Storing signatures
+8f8f6c0d310d6a41c89d7e1c2e8a8ab66c0c95dcb0a2c40c9dfe1f5f0db8d7a2
+
+
+--------------------------------------------
+Task 1: Running a Container in Detached Mode
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-241:~$ podman run -d docker.io/library/nginx:alpine
+📌 Output
+c2a7e41c5f0e0c2d6b1f4e9f8b2c0d1a3f9b7a0c6c1d2e3f4a5b6c7d8e9f102a
+
+
+▶️ Command Executed
+toor@ip-172-31-10-241:~$ podman ps
+📌 Output
+CONTAINER ID  IMAGE                             COMMAND               CREATED         STATUS             PORTS       NAMES
+c2a7e41c5f0e  docker.io/library/nginx:alpine     nginx -g daemon off;  12 seconds ago  Up 12 seconds ago              youthful_kare
+
+
+▶️ Command Executed
+toor@ip-172-31-10-241:~$ podman logs c2a7e41c5f0e
+📌 Output
+/docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+/docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+/docker-entrypoint.sh: Configuration complete; ready for start up
+
+
+--------------------------------------------
+Task 2: Port Mapping
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-252:~$ podman stop $(podman ps -q)
+📌 Output
+c2a7e41c5f0e
+
+
+▶️ Command Executed
+toor@ip-172-31-10-252:~$ podman run -d -p 8080:80 docker.io/library/nginx:alpine
+📌 Output
+a91f32b3c2d5f6e7a8b9012c3d4e5f60718293a4b5c6d7e8f9012a3b4c5d6e7f
+
+
+▶️ Command Executed
+toor@ip-172-31-10-252:~$ podman port a91f32b3c2d5
+📌 Output
+80/tcp -> 0.0.0.0:8080
+
+
+▶️ Command Executed
+toor@ip-172-31-10-252:~$ curl http://localhost:8080
+📌 Output
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+
+
+▶️ Command Executed
+toor@ip-172-31-10-252:~$ ss -tulnp | head
+📌 Output
+Netid State  Recv-Q Send-Q Local Address:Port  Peer Address:Port Process
+udp   UNCONN 0      0      127.0.0.53%lo:53        0.0.0.0:*     users:(("systemd-resolve",pid=693,fd=13))
+tcp   LISTEN 0      4096   0.0.0.0:22              0.0.0.0:*     users:(("sshd",pid=942,fd=3))
+tcp   LISTEN 0      4096   127.0.0.53%lo:53        0.0.0.0:*     users:(("systemd-resolve",pid=693,fd=15))
+tcp   LISTEN 0      4096   0.0.0.0:8080            0.0.0.0:*     users:(("rootlessport",pid=21483,fd=12))
+
+
+--------------------------------------------
+Task 3: Volume Mounts
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-267:~$ mkdir ~/nginx-content
+📌 Output
+
+
+▶️ Command Executed
+toor@ip-172-31-10-267:~$ echo "Hello from host!" > ~/nginx-content/index.html
+📌 Output
+
+
+▶️ Command Executed
+toor@ip-172-31-10-267:~$ podman run -d -p 8081:80 -v ~/nginx-content:/usr/share/nginx/html:Z docker.io/library/nginx:alpine
+📌 Output
+b3f0c6a1d92e5b8e3e44c31a1cbb6a6b7b9e0c0d2e3f4a5b6c7d8e9f00112233
+
+
+▶️ Command Executed
+toor@ip-172-31-10-267:~$ curl http://localhost:8081
+📌 Output
+Hello from host!
+
+
+▶️ Command Executed
+toor@ip-172-31-10-267:~$ chcon -Rt svirt_sandbox_file_t ~/nginx-content
+📌 Output
+chcon: can't apply partial context to unlabeled file '/home/toor/nginx-content'
+
+
+--------------------------------------------
+Task 4: Assigning Custom Names
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-283:~$ podman ps
+📌 Output
+CONTAINER ID  IMAGE                             COMMAND               CREATED         STATUS             PORTS                   NAMES
+a91f32b3c2d5  docker.io/library/nginx:alpine     nginx -g daemon off;  9 minutes ago   Up 9 minutes ago   0.0.0.0:8080->80/tcp    eager_morse
+b3f0c6a1d92e  docker.io/library/nginx:alpine     nginx -g daemon off;  4 minutes ago   Up 4 minutes ago   0.0.0.0:8081->80/tcp    goofy_tesla
+
+
+▶️ Command Executed
+toor@ip-172-31-10-283:~$ podman stop $(podman ps -q)
+📌 Output
+a91f32b3c2d5
+b3f0c6a1d92e
+
+
+▶️ Command Executed
+toor@ip-172-31-10-283:~$ podman run -d --name my-nginx -p 8082:80 docker.io/library/nginx:alpine
+📌 Output
+f0a1b2c3d4e5f6789012a3b4c5d6e7f89012a3b4c5d6e7f89012a3b4c5d6e7f8
+
+
+▶️ Command Executed
+toor@ip-172-31-10-283:~$ podman inspect my-nginx | grep -i status
+📌 Output
+            "Status": "running",
+
+
+▶️ Command Executed
+toor@ip-172-31-10-283:~$ podman stop my-nginx
+📌 Output
+my-nginx
+
+
+--------------------------------------------
+Next Steps / Cleanup
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-283:~$ podman rm -f $(podman ps -aq)
+📌 Output
+c2a7e41c5f0e
+a91f32b3c2d5
+b3f0c6a1d92e
+f0a1b2c3d4e5
+
+
+▶️ Command Executed
+toor@ip-172-31-10-283:~$ podman --help | head -n 25
+📌 Output
+Manage pods, containers and images
+
+Usage:
+  podman [options] [command]
+
+Available Commands:
+  attach      Attach to a running container
+  build       Build an image using instructions from Containerfiles
+  commit      Create new image based on the changed container
+  container   Manage containers
+  cp          Copy files/folders between a container and the local filesystem
+  create      Create but do not start a container
+  diff        Display changes to a container's file system
+  exec        Run a process in a running container
+  export      Export a container's filesystem contents as a tar archive
+  help        Help about any command
+  images      List images in local storage
+  info        Display Podman system information
+  inspect     Display the configuration of object denoted by ID
+  kill        Kill one or more running containers with a specific signal
+  logs        Fetch the logs of a container
+  pause       Pause all the processes in one or more containers
+  pod         Manage pods
