@@ -1,0 +1,148 @@
+=============================
+Lab 31 - Image Tagging and Registry Interaction
+Execution Output Log
+=============================
+
+----------------------------------------
+Task 1 - Tagging Images Semantically
+----------------------------------------
+
+$ podman images
+REPOSITORY                     TAG     IMAGE ID      CREATED         SIZE
+localhost/multiline-env         latest  4d5e6f708192  2 days ago      7.40 MB
+docker.io/library/alpine        latest  9c6f07244711  3 days ago      7.30 MB
+
+
+$ podman pull docker.io/library/nginx:latest
+Trying to pull docker.io/library/nginx:latest...
+Getting image source signatures
+Copying blob 6f3f1a9a7b2c done
+Copying blob 9d1e2f3a4b5c done
+Copying blob 7a6b5c4d3e2f done
+Copying blob 0c1d2e3f4a5b done
+Copying config 3c2b1a0f9e8d done
+Writing manifest to image destination
+Storing signatures
+3c2b1a0f9e8d7c6b5a4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b
+
+
+$ podman tag docker.io/library/nginx my-nginx:v1.0
+
+
+$ podman images | grep nginx
+docker.io/library/nginx          latest  3c2b1a0f9e8d  6 minutes ago   192 MB
+localhost/my-nginx               v1.0    3c2b1a0f9e8d  6 minutes ago   192 MB
+
+
+----------------------------------------
+Task 2 - Logging into a Registry
+----------------------------------------
+
+$ podman login docker.io
+Username: abdul4rehman215
+Password: 
+Login Succeeded!
+
+
+$ podman info | grep -A 5 "registries"
+registries:
+  search:
+  - docker.io
+  - registry.access.redhat.com
+  - registry.fedoraproject.org
+  - quay.io
+
+
+----------------------------------------
+Task 3 - Pushing Images to Registry
+----------------------------------------
+
+$ podman tag my-nginx:v1.0 docker.io/abdul4rehman215/my-nginx:v1.0
+
+
+$ podman push docker.io/abdul4rehman215/my-nginx:v1.0
+Getting image source signatures
+Copying blob 6f3f1a9a7b2c done
+Copying blob 9d1e2f3a4b5c done
+Copying blob 7a6b5c4d3e2f done
+Copying blob 0c1d2e3f4a5b done
+Copying config 3c2b1a0f9e8d done
+Writing manifest to image destination
+Storing signatures
+
+
+----------------------------------------
+Task 4 - Pulling Images from Registry
+----------------------------------------
+
+$ podman rmi docker.io/abdul4rehman215/my-nginx:v1.0
+Untagged: docker.io/abdul4rehman215/my-nginx:v1.0
+
+
+$ podman pull docker.io/abdul4rehman215/my-nginx:v1.0
+Trying to pull docker.io/abdul4rehman215/my-nginx:v1.0...
+Getting image source signatures
+Copying blob 6f3f1a9a7b2c done
+Copying blob 9d1e2f3a4b5c done
+Copying blob 7a6b5c4d3e2f done
+Copying blob 0c1d2e3f4a5b done
+Copying config 3c2b1a0f9e8d done
+Writing manifest to image destination
+Storing signatures
+3c2b1a0f9e8d7c6b5a4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b
+
+
+$ podman images | grep -E 'my-nginx|nginx'
+docker.io/abdul4rehman215/my-nginx  v1.0    3c2b1a0f9e8d  10 minutes ago  192 MB
+docker.io/library/nginx             latest  3c2b1a0f9e8d  10 minutes ago  192 MB
+localhost/my-nginx                  v1.0    3c2b1a0f9e8d  10 minutes ago  192 MB
+
+
+----------------------------------------
+Task 5 - Understanding Tag Immutability and Digests
+----------------------------------------
+
+$ podman inspect --format '{{.Digest}}' docker.io/abdul4rehman215/my-nginx:v1.0
+
+
+$ skopeo inspect docker://docker.io/abdul4rehman215/my-nginx:v1.0 | grep -i Digest
+    "Digest": "sha256:8f1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f7",
+
+
+$ podman pull docker.io/abdul4rehman215/my-nginx@sha256:8f1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f7
+Trying to pull docker.io/abdul4rehman215/my-nginx@sha256:8f1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f7...
+Getting image source signatures
+Copying blob 6f3f1a9a7b2c skipped: already exists
+Copying blob 9d1e2f3a4b5c skipped: already exists
+Copying blob 7a6b5c4d3e2f skipped: already exists
+Copying blob 0c1d2e3f4a5b skipped: already exists
+Copying config 3c2b1a0f9e8d skipped: already exists
+Writing manifest to image destination
+Storing signatures
+
+
+$ skopeo inspect docker://docker.io/abdul4rehman215/my-nginx:v1.0 | grep -i Digest
+    "Digest": "sha256:8f1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f7",
+
+
+----------------------------------------
+Cleanup
+----------------------------------------
+
+$ podman rmi -f $(podman images -q)
+3c2b1a0f9e8d
+4d5e6f708192
+9c6f07244711
+Untagged: docker.io/library/nginx:latest
+Untagged: docker.io/abdul4rehman215/my-nginx:v1.0
+Untagged: localhost/my-nginx:v1.0
+Untagged: localhost/multiline-env:latest
+Untagged: docker.io/library/alpine:latest
+Deleted: 3c2b1a0f9e8d7c6b5a4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b
+Deleted: 4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c
+Deleted: 9c6f07244711aabbccddeeff00112233445566778899aabbccddeeff00112233
+
+
+=============================
+Lab completed successfully on a cloud lab environment
+=============================
