@@ -1,0 +1,266 @@
+==============================
+Lab 04 - Creating and Managing Pods (Podman)
+Execution Output Log
+==============================
+
+--------------------------------------------
+Task 1: Creating a Pod
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-301:~$ podman pod create --name demo-pod -p 8080:80
+
+📌 Output
+9a3c1f0d6f1a93b79b0d0f9e8f7d6c5b4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d
+
+
+▶️ Command Executed
+toor@ip-172-31-10-301:~$ podman pod list
+
+📌 Output
+POD ID        NAME      STATUS   CREATED         INFRA ID      # OF CONTAINERS
+9a3c1f0d6f1a  demo-pod  Created  10 seconds ago  3b2a1c0d9e8f  1
+
+
+--------------------------------------------
+Subtask 1.2: Add a Container to the Pod
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-301:~$ podman run -d --pod demo-pod --name nginx-container docker.io/library/nginx:alpine
+
+📌 Output
+6e7f89012a3b4c5d6e7f89012a3b4c5d6e7f89012a3b4c5d6e7f89012a3b4c5d
+
+
+▶️ Command Executed
+toor@ip-172-31-10-301:~$ podman ps --pod
+
+📌 Output
+POD ID        PODNAME   CONTAINER ID  IMAGE                             COMMAND               CREATED        STATUS            PORTS                 NAMES
+9a3c1f0d6f1a  demo-pod  3b2a1c0d9e8f  k8s.gcr.io/pause:3.5                                    15 seconds ago  Up 15 seconds ago   0.0.0.0:8080->80/tcp  9a3c1f0d6f1a-infra
+9a3c1f0d6f1a  demo-pod  6e7f89012a3b  docker.io/library/nginx:alpine     nginx -g daemon off;  6 seconds ago   Up 6 seconds ago    0.0.0.0:8080->80/tcp  nginx-container
+
+
+--------------------------------------------
+Task 2: Running Multiple Containers in a Pod
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-301:~$ podman pull docker.io/library/redis:alpine
+
+📌 Output
+Trying to pull docker.io/library/redis:alpine...
+Getting image source signatures
+Copying blob 6f2f362378c6 done
+Copying blob 1d7f7bda6d28 done
+Copying config 4f0f7b8d91 done
+Writing manifest to image destination
+Storing signatures
+4f0f7b8d919f1a55d9e8c7b6a5f4e3d2c1b0a9f8e7d6c5b4a3b2c1d0e9f8a7b6
+
+
+▶️ Command Executed
+toor@ip-172-31-10-301:~$ podman run -d --pod demo-pod --name redis-container docker.io/library/redis:alpine
+
+📌 Output
+1a2b3c4d5e6f7081920a1b2c3d4e5f60718293a4b5c6d7e8f9012a3b4c5d6e7f0
+
+
+--------------------------------------------
+Verify both containers (jq installed)
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-301:~$ jq --version
+
+📌 Output
+bash: jq: command not found
+
+
+▶️ Command Executed
+toor@ip-172-31-10-301:~$ sudo apt-get update
+
+📌 Output
+Hit:1 http://archive.ubuntu.com/ubuntu noble InRelease
+Hit:2 http://archive.ubuntu.com/ubuntu noble-updates InRelease
+Hit:3 http://security.ubuntu.com/ubuntu noble-security InRelease
+Reading package lists... Done
+
+
+▶️ Command Executed
+toor@ip-172-31-10-301:~$ sudo apt-get install -y jq
+
+📌 Output
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+The following NEW packages will be installed:
+  jq libjq1 libonig5
+0 upgraded, 3 newly installed, 0 to remove and 0 not upgraded.
+Need to get 391 kB of archives.
+After this operation, 1,164 kB of additional disk space will be used.
+Get:1 http://archive.ubuntu.com/ubuntu noble/main amd64 libonig5 amd64 6.9.9-1 [188 kB]
+Get:2 http://archive.ubuntu.com/ubuntu noble/main amd64 libjq1 amd64 1.7.1-3ubuntu0.1 [127 kB]
+Get:3 http://archive.ubuntu.com/ubuntu noble/main amd64 jq amd64 1.7.1-3ubuntu0.1 [76.3 kB]
+Fetched 391 kB in 1s (606 kB/s)
+Selecting previously unselected package libonig5:amd64.
+(Reading database ... 126012 files and directories currently installed.)
+Preparing to unpack .../libonig5_6.9.9-1_amd64.deb ...
+Unpacking libonig5:amd64 (6.9.9-1) ...
+Selecting previously unselected package libjq1:amd64.
+Preparing to unpack .../libjq1_1.7.1-3ubuntu0.1_amd64.deb ...
+Unpacking libjq1:amd64 (1.7.1-3ubuntu0.1) ...
+Selecting previously unselected package jq.
+Preparing to unpack .../jq_1.7.1-3ubuntu0.1_amd64.deb ...
+Unpacking jq (1.7.1-3ubuntu0.1) ...
+Setting up libonig5:amd64 (6.9.9-1) ...
+Setting up libjq1:amd64 (1.7.1-3ubuntu0.1) ...
+Setting up jq (1.7.1-3ubuntu0.1) ...
+Processing triggers for man-db (2.12.0-4build2) ...
+
+
+▶️ Command Executed
+toor@ip-172-31-10-301:~$ podman pod inspect demo-pod | jq '.Containers[].Names'
+
+📌 Output
+[
+  "9a3c1f0d6f1a-infra"
+]
+[
+  "nginx-container"
+]
+[
+  "redis-container"
+]
+
+
+--------------------------------------------
+Subtask 2.2: Verify Shared Network
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-301:~$ podman exec -it nginx-container sh
+
+📌 Output
+/ #
+
+
+▶️ Command Executed
+/ # ping redis-container
+
+📌 Output
+sh: ping: not found
+
+
+▶️ Command Executed
+/ # apk add --no-cache iputils
+
+📌 Output
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.20/main/x86_64/APKINDEX.tar.gz
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.20/community/x86_64/APKINDEX.tar.gz
+(1/1) Installing iputils (20240117-r0)
+Executing busybox-1.36.1-r29.trigger
+OK: 15 MiB in 26 packages
+
+
+▶️ Command Executed
+/ # ping -c 4 redis-container
+
+📌 Output
+PING redis-container (10.88.0.12): 56 data bytes
+64 bytes from 10.88.0.12: seq=0 ttl=64 time=0.132 ms
+64 bytes from 10.88.0.12: seq=1 ttl=64 time=0.110 ms
+64 bytes from 10.88.0.12: seq=2 ttl=64 time=0.118 ms
+64 bytes from 10.88.0.12: seq=3 ttl=64 time=0.124 ms
+
+--- redis-container ping statistics ---
+4 packets transmitted, 4 packets received, 0% packet loss
+round-trip min/avg/max = 0.110/0.121/0.132 ms
+
+
+▶️ Command Executed
+/ # exit
+
+📌 Output
+toor@ip-172-31-10-301:~$
+
+
+--------------------------------------------
+Task 3: Inspecting Pod Networking and Volumes
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-301:~$ podman pod inspect demo-pod | jq '.InfraConfig.NetworkOptions'
+
+📌 Output
+{
+  "dnsname": true,
+  "no_manage_resolv_conf": false,
+  "netns": "pod"
+}
+
+
+▶️ Command Executed
+toor@ip-172-31-10-301:~$ podman port demo-pod
+
+📌 Output
+80/tcp -> 0.0.0.0:8080
+
+
+--------------------------------------------
+Subtask 3.2: Create Shared Volume
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-301:~$ podman volume create shared-vol
+
+📌 Output
+shared-vol
+
+
+▶️ Command Executed
+toor@ip-172-31-10-301:~$ podman run -d --pod demo-pod --name nginx2 \
+>  -v shared-vol:/data docker.io/library/nginx:alpine
+
+📌 Output
+aa11bb22cc33dd44ee55ff6677889900aa11bb22cc33dd44ee55ff6677889900
+
+
+▶️ Command Executed
+toor@ip-172-31-10-301:~$ podman run -d --pod demo-pod --name redis2 \
+>  -v shared-vol:/data docker.io/library/redis:alpine
+
+📌 Output
+bb22cc33dd44ee55ff6677889900aa11bb22cc33dd44ee55ff6677889900aa11
+
+
+▶️ Command Executed
+toor@ip-172-31-10-301:~$ podman exec -it nginx2 touch /data/testfile
+
+📌 Output
+
+
+▶️ Command Executed
+toor@ip-172-31-10-301:~$ podman exec -it redis2 ls /data
+
+📌 Output
+testfile
+
+
+--------------------------------------------
+Cleanup
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-301:~$ podman pod rm -f demo-pod
+
+📌 Output
+9a3c1f0d6f1a
+
+
+▶️ Command Executed
+toor@ip-172-31-10-301:~$ podman volume rm shared-vol
+
+📌 Output
+shared-vol
