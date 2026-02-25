@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2026-02-25T08:22:44Z"
+  labels:
+    app: multi-container-lab
+  name: multi-container-lab-pod
+spec:
+  containers:
+  - command:
+    - python
+    - -m
+    - http.server
+    - "8000"
+    image: docker.io/python:3.9
+    name: multi-container-lab-web-1
+    ports:
+    - containerPort: 8000
+      hostPort: 8000
+      protocol: TCP
+    volumeMounts:
+    - mountPath: /app
+      name: app-host
+  - image: docker.io/redis:alpine
+    name: multi-container-lab-redis-1
+    ports:
+    - containerPort: 6379
+      hostPort: 6379
+      protocol: TCP
