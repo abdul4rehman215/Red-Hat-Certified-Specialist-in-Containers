@@ -1,4 +1,4 @@
-# 🛠️ Troubleshooting Guide — Lab 04: `WORKDIR` and `USER` Instructions
+# 🛠️ Troubleshooting Guide — Lab 24: `WORKDIR` and `USER` Instructions
 
 > This file lists common issues you may encounter when working with `WORKDIR`, user creation in minimal images, and running containers as non-root.
 
@@ -21,7 +21,7 @@ Errors such as:
 - Test network/DNS:
   ```bash
   ping -c 2 registry.access.redhat.com
-```
+  ```
 
 * Retry build:
 
