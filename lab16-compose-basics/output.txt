@@ -1,0 +1,234 @@
+==============================
+Lab 16 - Compose Basics (Podman Compose)
+Execution Output Log
+==============================
+
+--------------------------------------------
+Lab Setup: Verify Podman
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-712:~$ podman --version
+
+📌 Output
+podman version 4.9.3
+
+
+--------------------------------------------
+Lab Setup: Verify Podman Compose Installation
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-712:~$ podman-compose --version
+
+📌 Output
+bash: podman-compose: command not found
+
+
+▶️ Command Executed
+toor@ip-172-31-10-712:~$ python3 --version
+
+📌 Output
+Python 3.12.3
+
+
+▶️ Command Executed
+toor@ip-172-31-10-712:~$ pip3 --version
+
+📌 Output
+pip 24.0 from /usr/lib/python3/dist-packages/pip (python 3.12)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-712:~$ pip3 install --user podman-compose
+
+📌 Output
+Collecting podman-compose
+  Downloading podman_compose-1.0.6-py3-none-any.whl (36 kB)
+Collecting pyyaml>=5.1 (from podman-compose)
+  Downloading PyYAML-6.0.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (762 kB)
+Collecting python-dotenv>=0.19.2 (from podman-compose)
+  Downloading python_dotenv-1.0.1-py3-none-any.whl (19 kB)
+Installing collected packages: pyyaml, python-dotenv, podman-compose
+  WARNING: The script podman-compose is installed in '/home/toor/.local/bin' which is not on PATH.
+Successfully installed podman-compose-1.0.6 python-dotenv-1.0.1 pyyaml-6.0.2
+
+
+▶️ Command Executed
+toor@ip-172-31-10-712:~$ export PATH=$PATH:/home/toor/.local/bin
+
+📌 Output
+
+
+▶️ Command Executed
+toor@ip-172-31-10-712:~$ podman-compose --version
+
+📌 Output
+podman-compose version 1.0.6
+
+
+--------------------------------------------
+Task 1: Create a Simple podman-compose.yml File
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-712:~$ mkdir compose-lab && cd compose-lab
+
+📌 Output
+toor@ip-172-31-10-712:~/compose-lab$
+
+
+▶️ Command Executed
+toor@ip-172-31-10-712:~/compose-lab$ touch podman-compose.yml
+
+📌 Output
+
+
+▶️ Command Executed
+toor@ip-172-31-10-712:~/compose-lab$ nano podman-compose.yml
+
+📌 Output
+# (nano opened - pasted YAML content - saved with CTRL+O, ENTER, then CTRL+X)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-712:~/compose-lab$ cat podman-compose.yml
+
+📌 Output
+version: '3.8'
+services:
+  web:
+    image: docker.io/nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./html:/usr/share/nginx/html
+  db:
+    image: docker.io/postgres:13
+    environment:
+      POSTGRES_PASSWORD: example
+
+
+--------------------------------------------
+Task 2: Start the Multi-Container Application
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-712:~/compose-lab$ ss -tulnp | grep 8080 || true
+
+📌 Output
+
+
+▶️ Command Executed
+toor@ip-172-31-10-712:~/compose-lab$ podman-compose up -d
+
+📌 Output
+['podman', '--version', '']
+using podman version: 4.9.3
+** excluding:  set()
+['podman', 'network', 'exists', 'compose-lab_default']
+['podman', 'network', 'create', '--label', 'io.podman.compose.project=compose-lab', 'compose-lab_default']
+Creating network "compose-lab_default" with the default driver
+['podman', 'volume', 'exists', 'compose-lab_db_data']
+['podman', 'volume', 'create', '--label', 'io.podman.compose.project=compose-lab', 'compose-lab_db_data']
+Creating volume "compose-lab_db_data" with default driver
+Pulling image docker.io/nginx:alpine...
+Pulling image docker.io/postgres:13...
+['podman', 'run', '--name=compose-lab_web_1', '--label', 'io.podman.compose.project=compose-lab', '--network', 'compose-lab_default', '-p', '8080:80', '-v', '/home/toor/compose-lab/html:/usr/share/nginx/html:rw', '-d', 'docker.io/nginx:alpine']
+Creating compose-lab_web_1 ... done
+['podman', 'run', '--name=compose-lab_db_1', '--label', 'io.podman.compose.project=compose-lab', '--network', 'compose-lab_default', '-e', 'POSTGRES_PASSWORD=example', '-v', 'compose-lab_db_data:/var/lib/postgresql/data:rw', '-d', 'docker.io/postgres:13']
+Creating compose-lab_db_1 ... done
+
+
+▶️ Command Executed
+toor@ip-172-31-10-712:~/compose-lab$ podman ps
+
+📌 Output
+CONTAINER ID  IMAGE                       COMMAND                  CREATED         STATUS             PORTS                  NAMES
+abc123def456  docker.io/nginx:alpine      nginx -g daemon off;     1 minute ago    Up 1 minute        0.0.0.0:8080->80/tcp   compose-lab_web_1
+def456abc123  docker.io/postgres:13       postgres                 1 minute ago    Up 1 minute        5432/tcp               compose-lab_db_1
+
+
+--------------------------------------------
+Task 3: Test the Application
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-712:~/compose-lab$ mkdir html
+
+📌 Output
+mkdir: cannot create directory ‘html’: File exists
+
+
+▶️ Command Executed
+toor@ip-172-31-10-712:~/compose-lab$ echo "<h1>Hello from Podman Compose!</h1>" > html/index.html
+
+📌 Output
+
+
+▶️ Command Executed
+toor@ip-172-31-10-712:~/compose-lab$ curl http://localhost:8080
+
+📌 Output
+<h1>Hello from Podman Compose!</h1>
+
+
+▶️ Command Executed
+toor@ip-172-31-10-712:~/compose-lab$ podman exec -it compose-lab_db_1 psql -U postgres
+
+📌 Output
+psql (13.16 (Debian 13.16-1.pgdg110+1))
+Type "help" for help.
+
+postgres=#
+
+
+▶️ Command Executed
+postgres=# SELECT version();
+
+📌 Output
+                                                           version
+-----------------------------------------------------------------------------------------------------------------------------
+ PostgreSQL 13.16 (Debian 13.16-1.pgdg110+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 10.2.1-6) 10.2.1, 64-bit
+(1 row)
+
+
+▶️ Command Executed
+postgres=# \q
+
+📌 Output
+toor@ip-172-31-10-712:~/compose-lab$
+
+
+--------------------------------------------
+Task 4: Stop and Clean Up
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-712:~/compose-lab$ podman-compose down
+
+📌 Output
+['podman', 'stop', 'compose-lab_web_1']
+Stopping compose-lab_web_1 ... done
+['podman', 'stop', 'compose-lab_db_1']
+Stopping compose-lab_db_1 ... done
+['podman', 'rm', 'compose-lab_web_1']
+Removing compose-lab_web_1 ... done
+['podman', 'rm', 'compose-lab_db_1']
+Removing compose-lab_db_1 ... done
+['podman', 'network', 'rm', 'compose-lab_default']
+Removing network compose-lab_default
+
+
+▶️ Command Executed
+toor@ip-172-31-10-712:~/compose-lab$ podman ps -a
+
+📌 Output
+CONTAINER ID  IMAGE       COMMAND     CREATED     STATUS      PORTS       NAMES
+
+
+▶️ Command Executed (optional volume check)
+toor@ip-172-31-10-712:~/compose-lab$ podman volume ls | grep compose-lab || true
+
+📌 Output
+local       compose-lab_db_data
