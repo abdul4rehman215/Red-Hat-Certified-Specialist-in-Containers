@@ -1,0 +1,169 @@
+==============================
+Lab 01 - Introduction to Containers (Podman)
+Execution Output Log
+==============================
+
+--------------------------------------------
+Setup: Install Podman (Ubuntu/Debian)
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-155:~$ sudo apt-get update
+
+📌 Output
+Hit:1 http://archive.ubuntu.com/ubuntu noble InRelease
+Hit:2 http://archive.ubuntu.com/ubuntu noble-updates InRelease
+Hit:3 http://archive.ubuntu.com/ubuntu noble-backports InRelease
+Hit:4 http://security.ubuntu.com/ubuntu noble-security InRelease
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+All packages are up to date.
+
+
+▶️ Command Executed
+toor@ip-172-31-10-155:~$ sudo apt-get install -y podman
+
+📌 Output
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+The following additional packages will be installed:
+  aardvark-dns buildah catatonit conmon containernetworking-plugins crun fuse-overlayfs
+  golang-github-containers-common libgpgme11 libsubid4 netavark passt uidmap
+Suggested packages:
+  containers-storage podman-docker
+The following NEW packages will be installed:
+  aardvark-dns buildah catatonit conmon containernetworking-plugins crun fuse-overlayfs
+  golang-github-containers-common libgpgme11 libsubid4 netavark passt podman uidmap
+0 upgraded, 14 newly installed, 0 to remove and 0 not upgraded.
+Need to get 45.3 MB of archives.
+After this operation, 186 MB of additional disk space will be used.
+Get:1 http://archive.ubuntu.com/ubuntu noble/universe amd64 podman amd64 4.9.3+ds1-1ubuntu0.1 [18.1 MB]
+Get:2 http://archive.ubuntu.com/ubuntu noble/universe amd64 conmon amd64 2.1.10+ds1-1 [471 kB]
+Get:3 http://archive.ubuntu.com/ubuntu noble/universe amd64 crun amd64 1.14.3-1 [1,047 kB]
+Get:4 http://archive.ubuntu.com/ubuntu noble/universe amd64 netavark amd64 1.10.3-1 [4,531 kB]
+Get:5 http://archive.ubuntu.com/ubuntu noble/universe amd64 aardvark-dns amd64 1.10.0-1 [1,730 kB]
+...
+Fetched 45.3 MB in 6s (7,214 kB/s)
+Selecting previously unselected package conmon.
+(Reading database ... 124382 files and directories currently installed.)
+Preparing to unpack .../00-conmon_2.1.10+ds1-1_amd64.deb ...
+Unpacking conmon (2.1.10+ds1-1) ...
+Selecting previously unselected package podman.
+Preparing to unpack .../13-podman_4.9.3+ds1-1ubuntu0.1_amd64.deb ...
+Unpacking podman (4.9.3+ds1-1ubuntu0.1) ...
+Setting up conmon (2.1.10+ds1-1) ...
+Setting up crun (1.14.3-1) ...
+Setting up netavark (1.10.3-1) ...
+Setting up aardvark-dns (1.10.0-1) ...
+Setting up podman (4.9.3+ds1-1ubuntu0.1) ...
+Created symlink /etc/systemd/system/default.target.wants/podman.service → /usr/lib/systemd/system/podman.service.
+Processing triggers for man-db (2.12.0-4build2) ...
+
+
+--------------------------------------------
+Verify Installation
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-155:~$ podman --version
+
+📌 Output
+podman version 4.9.3
+
+
+--------------------------------------------
+Task 2: Running a Simple Container with Podman
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-173:~$ podman pull hello-world
+
+📌 Output
+Trying to pull docker.io/library/hello-world:latest...
+Getting image source signatures
+Copying blob 1b930d010525 done
+Copying config fce289e99e done
+Writing manifest to image destination
+Storing signatures
+fce289e99eb9c0c2e9a3f50e6eec5b5a2f3e3c71a1a9b3120e4aa8b931f3c7b4
+
+
+▶️ Command Executed
+toor@ip-172-31-10-173:~$ podman run hello-world
+
+📌 Output
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+To generate this message, Docker took the following steps:
+ 1. The Docker client contacted the Docker daemon.
+ 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
+    (amd64)
+ 3. The Docker daemon created a new container from that image which runs the
+    executable that produces the output you are currently reading.
+ 4. The Docker daemon streamed that output to the Docker client, which sent it
+    to your terminal.
+
+To try something more ambitious, you can run an Ubuntu container with:
+ $ podman run -it ubuntu bash
+
+Share images, automate workflows, and more with a free Docker ID:
+ https://hub.docker.com/
+
+
+▶️ Command Executed
+toor@ip-172-31-10-173:~$ podman ps -a
+
+📌 Output
+CONTAINER ID  IMAGE                                COMMAND     CREATED         STATUS                     PORTS       NAMES
+b7f4b9d3a0e5  docker.io/library/hello-world:latest  /hello      20 seconds ago  Exited (0) 18 seconds ago              hopeful_morse
+
+
+--------------------------------------------
+Task 3: Exploring Container Isolation
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-191:~$ podman run -it alpine sh
+
+📌 Output
+Trying to pull docker.io/library/alpine:latest...
+Getting image source signatures
+Copying blob 44cf07d57ee4 done
+Copying config 6dbb9cc540 done
+Writing manifest to image destination
+Storing signatures
+/ #
+
+
+▶️ Command Executed
+/ # cat /etc/os-release
+
+📌 Output
+NAME="Alpine Linux"
+ID=alpine
+VERSION_ID=3.20.3
+PRETTY_NAME="Alpine Linux v3.20"
+HOME_URL="https://alpinelinux.org/"
+BUG_REPORT_URL="https://gitlab.alpinelinux.org/alpine/aports/-/issues"
+
+
+▶️ Command Executed
+/ # exit
+
+📌 Output
+toor@ip-172-31-10-191:~$
+
+
+--------------------------------------------
+Troubleshooting / Runtime Migration
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-191:~$ podman system migrate
+
+📌 Output
+Migrating containers to new runtime configuration
+Migration complete
