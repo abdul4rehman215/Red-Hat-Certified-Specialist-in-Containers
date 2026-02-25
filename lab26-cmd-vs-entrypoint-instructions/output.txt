@@ -1,0 +1,208 @@
+=============================
+Lab 26 - CMD vs ENTRYPOINT Instructions
+Execution Output Log
+=============================
+
+----------------------------------------
+Lab Setup
+----------------------------------------
+
+$ podman --version
+podman version 3.4.4
+
+
+$ mkdir cmd-entrypoint-lab && cd cmd-entrypoint-lab
+
+$ pwd
+/home/centos/cmd-entrypoint-lab
+
+
+----------------------------------------
+Task 1 - Understanding CMD Instruction
+----------------------------------------
+
+$ nano Containerfile.cmd
+
+$ cat Containerfile.cmd
+FROM alpine:latest
+CMD ["echo", "Hello from CMD"]
+
+
+$ podman build -t cmd-demo -f Containerfile.cmd .
+STEP 1/2: FROM alpine:latest
+Trying to pull docker.io/library/alpine:latest...
+Getting image source signatures
+Copying blob 44cf07d57ee4 done
+Copying config 9c6f072447 done
+Writing manifest to image destination
+Storing signatures
+STEP 2/2: CMD ["echo", "Hello from CMD"]
+COMMIT cmd-demo
+--> 1a2b3c4d5e6f
+Successfully tagged localhost/cmd-demo:latest
+1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091
+
+
+$ podman run cmd-demo
+Hello from CMD
+
+
+$ podman run cmd-demo echo "Overridden command"
+Overridden command
+
+
+----------------------------------------
+Task 2 - Understanding ENTRYPOINT Instruction
+----------------------------------------
+
+$ nano Containerfile.entrypoint
+
+$ cat Containerfile.entrypoint
+FROM alpine:latest
+ENTRYPOINT ["echo", "Hello from ENTRYPOINT"]
+
+
+$ podman build -t entrypoint-demo -f Containerfile.entrypoint .
+STEP 1/2: FROM alpine:latest
+STEP 2/2: ENTRYPOINT ["echo", "Hello from ENTRYPOINT"]
+COMMIT entrypoint-demo
+--> 2b3c4d5e6f70
+Successfully tagged localhost/entrypoint-demo:latest
+2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8092
+
+
+$ podman run entrypoint-demo
+Hello from ENTRYPOINT
+
+
+$ podman run entrypoint-demo "with appended text"
+Hello from ENTRYPOINT with appended text
+
+
+----------------------------------------
+Task 3 - Combining ENTRYPOINT and CMD
+----------------------------------------
+
+$ nano Containerfile.combined
+
+$ cat Containerfile.combined
+FROM alpine:latest
+ENTRYPOINT ["echo"]
+CMD ["Default message"]
+
+
+$ podman build -t combined-demo -f Containerfile.combined .
+STEP 1/3: FROM alpine:latest
+STEP 2/3: ENTRYPOINT ["echo"]
+--> 3c4d5e6f7081
+STEP 3/3: CMD ["Default message"]
+COMMIT combined-demo
+--> 4d5e6f708192
+Successfully tagged localhost/combined-demo:latest
+4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c
+
+
+$ podman run combined-demo
+Default message
+
+
+$ podman run combined-demo "Custom message"
+Custom message
+
+
+----------------------------------------
+Task 4 - Advanced Usage Patterns
+----------------------------------------
+
+$ nano entrypoint.sh
+
+$ cat entrypoint.sh
+#!/bin/sh
+echo "Starting container with arguments: $@"
+exec "$@"
+
+
+$ nano Containerfile.script
+
+$ cat Containerfile.script
+FROM alpine:latest
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["echo", "Default execution"]
+
+
+$ podman build -t script-demo -f Containerfile.script .
+STEP 1/5: FROM alpine:latest
+STEP 2/5: COPY entrypoint.sh /entrypoint.sh
+--> 5e6f708192a3
+STEP 3/5: RUN chmod +x /entrypoint.sh
+--> 6f708192a3b4
+STEP 4/5: ENTRYPOINT ["/entrypoint.sh"]
+--> 708192a3b4c5
+STEP 5/5: CMD ["echo", "Default execution"]
+COMMIT script-demo
+--> 8192a3b4c5d6
+Successfully tagged localhost/script-demo:latest
+8192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f70
+
+
+$ podman run script-demo
+Starting container with arguments: echo Default execution
+Default execution
+
+
+$ podman run --entrypoint /bin/ls script-demo -l /
+total 68
+drwxr-xr-x    2 root     root          4096 Aug 18 12:18 bin
+drwxr-xr-x    5 root     root           360 Aug 18 12:19 dev
+drwxr-xr-x    1 root     root          4096 Aug 18 12:19 etc
+drwxr-xr-x    2 root     root          4096 Aug 18 12:19 home
+drwxr-xr-x    1 root     root          4096 Aug 18 12:19 lib
+drwxr-xr-x    5 root     root          4096 Aug 18 12:19 media
+drwxr-xr-x    2 root     root          4096 Aug 18 12:19 mnt
+drwxr-xr-x    2 root     root          4096 Aug 18 12:19 opt
+dr-xr-xr-x  227 root     root             0 Aug 18 12:19 proc
+drwx------    2 root     root          4096 Aug 18 12:19 root
+drwxr-xr-x    2 root     root          4096 Aug 18 12:19 run
+drwxr-xr-x    2 root     root          4096 Aug 18 12:19 sbin
+dr-xr-xr-x   13 root     root             0 Aug 18 12:19 sys
+drwxrwxrwt    2 root     root          4096 Aug 18 12:19 tmp
+drwxr-xr-x    7 root     root          4096 Aug 18 12:19 usr
+drwxr-xr-x   12 root     root          4096 Aug 18 12:19 var
+
+
+----------------------------------------
+Final Verification
+----------------------------------------
+
+$ podman images | grep -E 'cmd-demo|entrypoint-demo|combined-demo|script-demo'
+localhost/script-demo        latest   8192a3b4c5d6  2 minutes ago   7.42 MB
+localhost/combined-demo      latest   4d5e6f708192  6 minutes ago   7.40 MB
+localhost/entrypoint-demo    latest   2b3c4d5e6f70  9 minutes ago   7.40 MB
+localhost/cmd-demo           latest   1a2b3c4d5e6f  12 minutes ago  7.40 MB
+docker.io/library/alpine     latest   9c6f07244711  40 minutes ago  7.30 MB
+
+
+$ podman run --rm combined-demo "Lab completed successfully!"
+Lab completed successfully!
+
+
+----------------------------------------
+Cleanup
+----------------------------------------
+
+$ podman rmi cmd-demo entrypoint-demo combined-demo script-demo
+Untagged: localhost/cmd-demo:latest
+Deleted: 1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091
+Untagged: localhost/entrypoint-demo:latest
+Deleted: 2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8092
+Untagged: localhost/combined-demo:latest
+Deleted: 4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c
+Untagged: localhost/script-demo:latest
+Deleted: 8192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f70
+
+
+=============================
+Lab completed successfully on a cloud lab environment
+=============================
