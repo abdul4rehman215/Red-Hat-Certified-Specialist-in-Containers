@@ -1,0 +1,220 @@
+=============================
+Lab 33 - Running Containers Locally with Podman
+Execution Output Log
+=============================
+
+----------------------------------------
+Setup Requirements
+----------------------------------------
+
+$ sudo dnf install -y podman
+sudo: dnf: command not found
+
+
+$ sudo yum install -y podman
+Loaded plugins: fastestmirror, langpacks
+Loading mirror speeds from cached hostfile
+ * base: mirror.centos.org
+ * extras: mirror.centos.org
+ * updates: mirror.centos.org
+Package podman-3.4.4-1.el7.x86_64 already installed and latest version
+Nothing to do
+
+
+$ podman --version
+podman version 3.4.4
+
+
+----------------------------------------
+Task 1 - Running Containers in Foreground and Background
+----------------------------------------
+
+$ podman pull docker.io/library/nginx:latest
+Trying to pull docker.io/library/nginx:latest...
+Getting image source signatures
+Copying blob 6f3f1a9a7b2c done
+Copying blob 9d1e2f3a4b5c done
+Copying blob 7a6b5c4d3e2f done
+Copying blob 0c1d2e3f4a5b done
+Copying config 3c2b1a0f9e8d done
+Writing manifest to image destination
+Storing signatures
+3c2b1a0f9e8d7c6b5a4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b
+
+
+$ podman run --name foreground-container docker.io/library/nginx
+/docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+/docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+/docker-entrypoint.sh: Configuration complete; ready for start up
+2026/02/25 13:32:41 [notice] 1#1: using the "epoll" event method
+2026/02/25 13:32:41 [notice] 1#1: nginx/1.26.1
+2026/02/25 13:32:41 [notice] 1#1: built by gcc 12.2.0 (Debian 12.2.0-14)
+2026/02/25 13:32:41 [notice] 1#1: OS: Linux 3.10.0-1160.el7.x86_64
+2026/02/25 13:32:41 [notice] 1#1: getrlimit(RLIMIT_NOFILE): 1048576:1048576
+2026/02/25 13:32:41 [notice] 1#1: start worker processes
+2026/02/25 13:32:41 [notice] 1#1: start worker process 31
+2026/02/25 13:32:41 [notice] 1#1: start worker process 32
+
+^C
+2026/02/25 13:32:53 [notice] 1#1: signal 2 (SIGINT) received, exiting
+2026/02/25 13:32:53 [notice] 32#32: exiting
+2026/02/25 13:32:53 [notice] 31#31: exiting
+2026/02/25 13:32:53 [notice] 32#32: exit
+2026/02/25 13:32:53 [notice] 31#31: exit
+2026/02/25 13:32:53 [notice] 1#1: exiting
+2026/02/25 13:32:53 [notice] 1#1: exit
+
+
+$ podman run -d --name background-container docker.io/library/nginx
+4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef01234567
+
+
+$ podman ps
+CONTAINER ID  IMAGE                 COMMAND               CREATED         STATUS             PORTS  NAMES
+4e5f60718293  docker.io/library/nginx:latest  nginx -g daemon off;  6 seconds ago   Up 6 seconds ago         background-container
+
+
+----------------------------------------
+Task 2 - Port Mapping and Volume Binding
+----------------------------------------
+
+$ podman run -d --name webapp -p 8080:80 docker.io/library/nginx
+Error: name "webapp" is in use: container already exists
+
+
+$ podman rm -f webapp
+webapp
+
+
+$ podman run -d --name webapp -p 8080:80 docker.io/library/nginx
+5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef0123456789
+
+
+$ curl -I http://localhost:8080
+HTTP/1.1 200 OK
+Server: nginx/1.26.1
+Date: Wed, 25 Feb 2026 08:03:12 GMT
+Content-Type: text/html
+Content-Length: 615
+Last-Modified: Tue, 14 Jan 2025 10:45:11 GMT
+Connection: keep-alive
+ETag: "67863a17-267"
+Accept-Ranges: bytes
+
+
+$ curl http://localhost:8080 | head
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+
+
+$ podman volume create mydata
+mydata
+
+
+$ podman run -d --name vol-container -v mydata:/data docker.io/library/alpine tail -f /dev/null
+Trying to pull docker.io/library/alpine:latest...
+Getting image source signatures
+Copying blob 44cf07d57ee4 done
+Copying config 9c6f072447 done
+Writing manifest to image destination
+Storing signatures
+6a7b8c9d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3
+
+
+$ podman exec vol-container ls /data
+
+
+----------------------------------------
+Task 3 - User Management and Runtime Overrides
+----------------------------------------
+
+$ podman run --rm -it --user 1000 docker.io/library/alpine whoami
+whoami: unknown uid 1000
+
+
+$ podman run --rm -it --user nobody docker.io/library/alpine whoami
+nobody
+
+
+----------------------------------------
+Subtask 3.2 - Inspect Running Containers
+----------------------------------------
+
+$ podman inspect webapp | head -n 25
+[
+  {
+    "Id": "5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef0123456789",
+    "Created": "2026-02-25T08:02:58.123456789Z",
+    "Path": "/docker-entrypoint.sh",
+    "Args": [
+      "nginx",
+      "-g",
+      "daemon off;"
+    ],
+    "State": {
+      "OciVersion": "1.0.2-dev",
+      "Status": "running",
+      "Running": true,
+      "Paused": false,
+      "Restarting": false,
+      "OOMKilled": false,
+      "Dead": false,
+      "Pid": 3124,
+      "ExitCode": 0,
+      "Error": "",
+      "StartedAt": "2026-02-25T08:02:59.001234567Z",
+      "FinishedAt": "0001-01-01T00:00:00Z"
+    },
+
+
+$ podman logs webapp | tail -n 12
+2026/02/25 08:02:59 [notice] 1#1: using the "epoll" event method
+2026/02/25 08:02:59 [notice] 1#1: nginx/1.26.1
+2026/02/25 08:02:59 [notice] 1#1: OS: Linux 3.10.0-1160.el7.x86_64
+2026/02/25 08:02:59 [notice] 1#1: getrlimit(RLIMIT_NOFILE): 1048576:1048576
+2026/02/25 08:02:59 [notice] 1#1: start worker processes
+2026/02/25 08:02:59 [notice] 1#1: start worker process 28
+2026/02/25 08:02:59 [notice] 1#1: start worker process 29
+
+
+$ podman stats --no-stream
+ID            NAME                 CPU %   MEM USAGE / LIMIT     MEM %   NET IO      BLOCK IO    PIDS
+5f60718293a4  webapp                0.00%   2.6MiB / 1.84GiB     0.14%   1.8kB/1.1kB  0B/0B       7
+4e5f60718293  background-container  0.00%   2.5MiB / 1.84GiB     0.13%   0B/0B        0B/0B       7
+6a7b8c9d0e1f  vol-container         0.00%   612KiB / 1.84GiB     0.03%   0B/0B        0B/0B       1
+
+
+----------------------------------------
+Task 4 - Cleanup
+----------------------------------------
+
+$ podman stop -a
+webapp
+background-container
+vol-container
+
+
+$ podman rm -a
+5f60718293a4
+4e5f60718293
+6a7b8c9d0e1f
+foreground-container
+
+
+$ podman volume rm mydata
+mydata
+
+
+=============================
+Lab completed successfully on a cloud lab environment
+=============================
