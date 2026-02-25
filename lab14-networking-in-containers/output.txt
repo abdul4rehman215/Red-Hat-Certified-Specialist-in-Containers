@@ -1,0 +1,180 @@
+==============================
+Lab 14 - Networking in Containers (Podman)
+Execution Output Log
+==============================
+
+--------------------------------------------
+Task 1: List Podman Networks
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-640:~$ podman network ls
+
+📌 Output
+NETWORK ID    NAME         DRIVER
+2f259bab93aa  podman       bridge
+9c3d1a0b7e6f  pasta        pasta
+
+
+▶️ Command Executed
+toor@ip-172-31-10-640:~$ podman network inspect podman
+
+📌 Output
+[
+  {
+    "name": "podman",
+    "id": "2f259bab93aa6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1",
+    "driver": "bridge",
+    "network_interface": "podman0",
+    "created": "2026-02-25T16:02:14.144221327Z",
+    "subnets": [
+      {
+        "subnet": "10.88.0.0/16",
+        "gateway": "10.88.0.1"
+      }
+    ],
+    "ipv6_enabled": false,
+    "internal": false,
+    "dns_enabled": true,
+    "ipam_options": {
+      "driver": "host-local"
+    }
+  }
+]
+
+
+--------------------------------------------
+Task 2: Inspect Network Settings (Custom Network)
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-640:~$ podman network create lab-network
+
+📌 Output
+4a5b6c7d8e9f00112233445566778899aabbccddeeff00112233445566778899
+
+
+▶️ Command Executed
+toor@ip-172-31-10-640:~$ podman network ls | grep lab-network
+
+📌 Output
+4a5b6c7d8e9f  lab-network  bridge
+
+
+▶️ Command Executed
+toor@ip-172-31-10-640:~$ podman network inspect lab-network
+
+📌 Output
+[
+  {
+    "name": "lab-network",
+    "id": "4a5b6c7d8e9f00112233445566778899aabbccddeeff00112233445566778899",
+    "driver": "bridge",
+    "network_interface": "lab-network0",
+    "created": "2026-02-25T16:05:47.650118342Z",
+    "subnets": [
+      {
+        "subnet": "10.89.0.0/24",
+        "gateway": "10.89.0.1"
+      }
+    ],
+    "ipv6_enabled": false,
+    "internal": false,
+    "dns_enabled": true,
+    "ipam_options": {
+      "driver": "host-local"
+    }
+  }
+]
+
+
+▶️ Command Executed
+toor@ip-172-31-10-640:~$ podman info | head -n 25
+
+📌 Output
+host:
+  arch: amd64
+  buildahVersion: 1.35.0
+  cgroupManager: systemd
+  cgroupVersion: v2
+  conmon:
+    package: conmon 2.1.10+ds1-1
+  distribution:
+    distribution: ubuntu
+    version: "24.04"
+  eventLogger: journald
+  kernel: 6.8.0-1021-aws
+  os: linux
+  remoteSocket:
+    path: /run/user/1001/podman/podman.sock
+
+
+--------------------------------------------
+Task 3: Run Containers with Port Publishing
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-640:~$ ss -tulnp | grep 8080 || true
+
+📌 Output
+✅ Port 8080 is free.
+
+
+▶️ Command Executed
+toor@ip-172-31-10-640:~$ podman run -d --name webapp -p 8080:80 docker.io/library/nginx
+
+📌 Output
+9b8c7d6e5f4a3b2c1d0e9f887766554433221100ffeeddccbbaa99887766554433
+
+
+▶️ Command Executed
+toor@ip-172-31-10-640:~$ curl http://localhost:8080 | head
+
+📌 Output
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+
+
+▶️ Command Executed
+toor@ip-172-31-10-640:~$ sudo firewall-cmd --list-ports
+
+📌 Output
+sudo: firewall-cmd: command not found
+✅ (Expected on Ubuntu unless firewalld is installed.)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-640:~$ podman stop webapp
+
+📌 Output
+webapp
+
+
+▶️ Command Executed
+toor@ip-172-31-10-640:~$ podman rm webapp
+
+📌 Output
+webapp
+
+
+▶️ Command Executed
+toor@ip-172-31-10-640:~$ podman run -d --name webapp -p 8080:80 --network lab-network docker.io/library/nginx
+
+📌 Output
+11223344556677889900aabbccddeeff00112233445566778899aabbccddeeff
+
+
+▶️ Command Executed
+toor@ip-172-31-10-640:~$ podman inspect webapp | grep -A 5 "Networks"
+
+📌 Output
+        "Networks": {
+            "lab-network": {
+                "NetworkID": "4a5b6c7d8e9f00112233445566778899aabbccddeeff00112233445566778899",
+                "IPAddress": "10.89.0.2",
+                "Gateway": "10.89.0.1",
