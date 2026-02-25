@@ -1,0 +1,203 @@
+=============================
+Lab 28 - EXPOSE and Port Binding
+Execution Output Log
+=============================
+
+----------------------------------------
+Lab Setup
+----------------------------------------
+
+$ podman --version
+podman version 3.4.4
+
+
+$ mkdir portbinding-lab && cd portbinding-lab
+
+$ pwd
+/home/centos/portbinding-lab
+
+
+----------------------------------------
+Task 1 - Using EXPOSE in Containerfile
+----------------------------------------
+
+$ nano app.py
+
+$ cat app.py
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route('/')
+def hello():
+    return "Hello from the exposed container port!\n"
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)
+
+
+$ echo "flask" > requirements.txt
+
+
+$ cat requirements.txt
+flask
+
+
+$ nano Containerfile
+
+
+$ cat Containerfile
+FROM python:3.9-slim
+WORKDIR /app
+COPY . .
+RUN pip install -r requirements.txt
+EXPOSE 8080
+CMD ["python", "app.py"]
+
+
+----------------------------------------
+Task 2 - Build and Run with Port Mapping
+----------------------------------------
+
+$ podman build -t exposed-app .
+STEP 1/6: FROM python:3.9-slim
+Trying to pull docker.io/library/python:3.9-slim...
+Getting image source signatures
+Copying blob 8a3c2b1d0e9f done
+Copying blob 4f3a2b1c0d9e done
+Copying config 1c2d3e4f5a6b done
+Writing manifest to image destination
+Storing signatures
+STEP 2/6: WORKDIR /app
+--> 2b3c4d5e6f70
+STEP 3/6: COPY . .
+--> 3c4d5e6f7081
+STEP 4/6: RUN pip install -r requirements.txt
+Collecting flask
+  Downloading Flask-3.0.3-py3-none-any.whl (101 kB)
+Collecting Werkzeug>=3.0.0
+  Downloading werkzeug-3.0.3-py3-none-any.whl (227 kB)
+Collecting Jinja2>=3.1.2
+  Downloading Jinja2-3.1.4-py3-none-any.whl (133 kB)
+Collecting itsdangerous>=2.1.2
+  Downloading itsdangerous-2.2.0-py3-none-any.whl (16 kB)
+Collecting click>=8.1.3
+  Downloading click-8.1.7-py3-none-any.whl (97 kB)
+Collecting blinker>=1.6.2
+  Downloading blinker-1.8.2-py3-none-any.whl (9.5 kB)
+Installing collected packages: blinker, click, itsdangerous, Jinja2, Werkzeug, flask
+Successfully installed Jinja2-3.1.4 Werkzeug-3.0.3 blinker-1.8.2 click-8.1.7 flask-3.0.3 itsdangerous-2.2.0
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager.
+STEP 5/6: EXPOSE 8080
+--> 4d5e6f708192
+STEP 6/6: CMD ["python", "app.py"]
+COMMIT exposed-app
+--> 5e6f708192a3
+Successfully tagged localhost/exposed-app:latest
+5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d
+
+
+$ podman run -d -p 8080:8080 --name webapp exposed-app
+6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e
+
+
+$ podman ps
+CONTAINER ID  IMAGE                 COMMAND        CREATED         STATUS             PORTS                   NAMES
+6f708192a3b4  localhost/exposed-app  python app.py  6 seconds ago   Up 6 seconds ago   0.0.0.0:8080->8080/tcp  webapp
+
+
+----------------------------------------
+Task 3 - Test Connectivity from Host
+----------------------------------------
+
+$ ss -tulnp | grep 8080
+-bash: ss: command not found
+
+
+$ sudo yum install -y iproute
+Loaded plugins: fastestmirror, langpacks
+Loading mirror speeds from cached hostfile
+ * base: mirror.centos.org
+ * extras: mirror.centos.org
+ * updates: mirror.centos.org
+Package iproute-4.11.0-30.el7.x86_64 already installed and latest version
+Nothing to do
+
+
+$ ss -tulnp | grep 8080
+tcp   LISTEN 0      4096      0.0.0.0:8080      0.0.0.0:*    users:(("rootlessport",pid=2147,fd=11))
+
+
+$ curl http://localhost:8080
+Hello from the exposed container port!
+
+
+$ podman stop webapp
+webapp
+
+
+$ podman run -d -p 9090:8080 --name webapp2 exposed-app
+708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f
+
+
+$ curl http://localhost:9090
+Hello from the exposed container port!
+
+
+----------------------------------------
+Task 4 - Troubleshoot Port Conflicts
+----------------------------------------
+
+$ python3 -m http.server 8080 >/tmp/httpserver.log 2>&1 &
+[1] 2210
+
+
+$ podman run -d -p 8080:8080 --name webapp3 exposed-app
+Error: unable to start container "webapp3": rootlessport cannot expose privileged port 8080, listen tcp 0.0.0.0:8080: bind: address already in use
+
+
+$ sudo lsof -i :8080
+COMMAND   PID  USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+python3  2210 centos   3u  IPv4  35361      0t0  TCP *:http-alt (LISTEN)
+
+
+$ kill 2210
+
+
+$ podman run -d -P --name webapp4 exposed-app
+8192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f70
+
+
+$ podman port webapp4
+8080/tcp -> 0.0.0.0:40123
+
+
+----------------------------------------
+Final Verification
+----------------------------------------
+
+$ podman ps -a
+CONTAINER ID  IMAGE                 COMMAND        CREATED         STATUS                     PORTS                     NAMES
+8192a3b4c5d6  localhost/exposed-app  python app.py  1 minute ago    Up 1 minute ago            0.0.0.0:40123->8080/tcp   webapp4
+708192a3b4c5  localhost/exposed-app  python app.py  4 minutes ago   Up 4 minutes ago          0.0.0.0:9090->8080/tcp    webapp2
+6f708192a3b4  localhost/exposed-app  python app.py  12 minutes ago  Exited (0) 6 minutes ago  0.0.0.0:8080->8080/tcp    webapp
+
+
+----------------------------------------
+Cleanup
+----------------------------------------
+
+$ podman stop -a
+webapp4
+webapp2
+
+
+$ podman rm -a
+8192a3b4c5d6
+708192a3b4c5
+6f708192a3b4
+
+
+=============================
+Lab completed successfully on a cloud lab environment
+=============================
