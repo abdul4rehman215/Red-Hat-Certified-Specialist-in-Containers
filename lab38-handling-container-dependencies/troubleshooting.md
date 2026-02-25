@@ -16,7 +16,7 @@ Startup order is not the same as readiness. Some compose implementations may not
 - Use a proper DB healthcheck (`pg_isready`) and verify it:
   ```bash id="n4q1x8"
   podman inspect --format='{{.State.Health.Status}}' container-dependencies-lab_db_1
-````
+  ```
 
 * Add app-side retry logic (entrypoint loop), not just compose ordering.
 
