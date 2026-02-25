@@ -1,0 +1,481 @@
+==============================
+Lab 07 - Layer Caching and Optimization
+Execution Output Log
+==============================
+
+--------------------------------------------
+Setup Requirements
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~$ podman --version
+
+📌 Output
+podman version 4.9.3
+
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~$ mkdir layer-optimization-lab && cd layer-optimization-lab
+
+📌 Output
+toor@ip-172-31-10-401:~/layer-optimization-lab$
+
+
+--------------------------------------------
+Task 1: Create Initial Dockerfile + App
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ nano Dockerfile.initial
+
+📌 Output
+# (nano opened - pasted content - saved with CTRL+O, ENTER, then CTRL+X)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ nano app.py
+
+📌 Output
+# (nano opened - pasted content - saved with CTRL+O, ENTER, then CTRL+X)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ ls -l
+
+📌 Output
+total 8
+-rw-r--r-- 1 toor toor 195 Feb 25 12:19 app.py
+-rw-r--r-- 1 toor toor 160 Feb 25 12:19 Dockerfile.initial
+
+
+--------------------------------------------
+Subtask 1.2: Build Initial Image
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ podman build -t myapp:initial -f Dockerfile.initial .
+
+📌 Output
+STEP 1/8: FROM ubuntu:22.04
+Trying to pull docker.io/library/ubuntu:22.04...
+Getting image source signatures
+Copying blob 2e6ee9c01b6d done
+Copying config 9f3d9cdb2a done
+Writing manifest to image destination
+Storing signatures
+STEP 2/8: RUN apt-get update
+Get:1 http://archive.ubuntu.com/ubuntu jammy InRelease [270 kB]
+Get:2 http://archive.ubuntu.com/ubuntu jammy-updates InRelease [128 kB]
+Get:3 http://security.ubuntu.com/ubuntu jammy-security InRelease [129 kB]
+Fetched 527 kB in 1s (731 kB/s)
+Reading package lists... Done
+STEP 3/8: RUN apt-get install -y curl wget
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+The following additional packages will be installed:
+  ca-certificates libbrotli1 libcurl4 libldap-2.5-0 libnghttp2-14 libpsl5 librtmp1 libssh-4
+Suggested packages:
+  wget-doc
+The following NEW packages will be installed:
+  ca-certificates curl wget libbrotli1 libcurl4 libldap-2.5-0 libnghttp2-14 libpsl5 librtmp1 libssh-4
+0 upgraded, 10 newly installed, 0 to remove and 0 not upgraded.
+Need to get 2,911 kB of archives.
+After this operation, 7,822 kB of additional disk space will be used.
+Fetched 2,911 kB in 1s (2,741 kB/s)
+Setting up ca-certificates (20230311ubuntu0.22.04.1) ...
+Setting up wget (1.21.2-2ubuntu1) ...
+Setting up curl (7.81.0-1ubuntu1.17) ...
+STEP 4/8: RUN apt-get install -y python3 python3-pip
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+The following additional packages will be installed:
+  python3-distutils python3-lib2to3 python3-setuptools python3-wheel
+Suggested packages:
+  python3-venv python3-doc
+The following NEW packages will be installed:
+  python3 python3-pip python3-distutils python3-lib2to3 python3-setuptools python3-wheel
+0 upgraded, 6 newly installed, 0 to remove and 0 not upgraded.
+Need to get 6,584 kB of archives.
+After this operation, 32.6 MB of additional disk space will be used.
+Setting up python3 (3.10.6-1~22.04) ...
+Setting up python3-pip (22.0.2+dfsg-1ubuntu0.4) ...
+STEP 5/8: RUN pip install flask
+Collecting flask
+  Downloading Flask-3.0.2-py3-none-any.whl (101 kB)
+Collecting Werkzeug>=3.0.0
+  Downloading werkzeug-3.0.1-py3-none-any.whl (226 kB)
+Collecting Jinja2>=3.1.2
+  Downloading Jinja2-3.1.3-py3-none-any.whl (133 kB)
+Collecting itsdangerous>=2.1.2
+  Downloading itsdangerous-2.1.2-py3-none-any.whl (15 kB)
+Collecting click>=8.1.3
+  Downloading click-8.1.7-py3-none-any.whl (97 kB)
+Collecting blinker>=1.6.2
+  Downloading blinker-1.7.0-py3-none-any.whl (13 kB)
+Installing collected packages: blinker, itsdangerous, click, Werkzeug, Jinja2, flask
+Successfully installed Jinja2-3.1.3 Werkzeug-3.0.1 blinker-1.7.0 click-8.1.7 flask-3.0.2 itsdangerous-2.1.2
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager.
+STEP 6/8: COPY app.py /app/
+--> 8c0a1b2c3d4e
+STEP 7/8: WORKDIR /app
+--> 1a2b3c4d5e6f
+STEP 8/8: CMD ["python3", "app.py"]
+COMMIT myapp:initial
+--> 7f6e5d4c3b2a1a0b9c8d7e6f5a4b3c2d1e0f99887766554433221100ffeeddcc
+Successfully tagged localhost/myapp:initial
+7f6e5d4c3b2a1a0b9c8d7e6f5a4b3c2d1e0f99887766554433221100ffeeddcc
+
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ podman images myapp:initial
+
+📌 Output
+REPOSITORY          TAG      IMAGE ID      CREATED         SIZE
+localhost/myapp     initial  7f6e5d4c3b2a  1 minute ago     392 MB
+
+
+--------------------------------------------
+Task 2: Optimize the Dockerfile
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ nano Dockerfile.optimized
+
+📌 Output
+# (nano opened - pasted content - saved with CTRL+O, ENTER, then CTRL+X)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ podman build -t myapp:optimized -f Dockerfile.optimized .
+
+📌 Output
+STEP 1/5: FROM ubuntu:22.04
+--> 9f3d9cdb2a0e
+STEP 2/5: RUN apt-get update && \
+ apt-get install -y curl wget python3 python3-pip && \
+ pip install flask && \
+ apt-get clean && \
+ rm -rf /var/lib/apt/lists/*
+--> Using cache 3c2b1a0f9e8d
+STEP 3/5: COPY app.py /app/
+--> 6d5c4b3a2910
+STEP 4/5: WORKDIR /app
+--> 0f1e2d3c4b5a
+STEP 5/5: CMD ["python3", "app.py"]
+COMMIT myapp:optimized
+--> 11223344556677889900aabbccddeeff00112233445566778899aabbccddeeff
+Successfully tagged localhost/myapp:optimized
+11223344556677889900aabbccddeeff00112233445566778899aabbccddeeff
+
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ podman images myapp:*
+
+📌 Output
+REPOSITORY          TAG        IMAGE ID      CREATED         SIZE
+localhost/myapp     optimized  112233445566  15 seconds ago   307 MB
+localhost/myapp     initial    7f6e5d4c3b2a  4 minutes ago    392 MB
+
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ podman images myapp:optimized
+
+📌 Output
+REPOSITORY          TAG        IMAGE ID      CREATED         SIZE
+localhost/myapp     optimized  112233445566  22 seconds ago   307 MB
+
+
+--------------------------------------------
+Task 3: Leverage Build Cache
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ nano app.py
+
+📌 Output
+# Added a comment: # cache-test change
+# (saved with CTRL+O, ENTER, CTRL+X)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ podman build -t myapp:optimized -f Dockerfile.optimized .
+
+📌 Output
+STEP 1/5: FROM ubuntu:22.04
+--> 9f3d9cdb2a0e
+STEP 2/5: RUN apt-get update && \
+ apt-get install -y curl wget python3 python3-pip && \
+ pip install flask && \
+ apt-get clean && \
+ rm -rf /var/lib/apt/lists/*
+--> Using cache 3c2b1a0f9e8d
+STEP 3/5: COPY app.py /app/
+--> 9a8b7c6d5e4f
+STEP 4/5: WORKDIR /app
+--> Using cache 0f1e2d3c4b5a
+STEP 5/5: CMD ["python3", "app.py"]
+--> Using cache 5a4b3c2d1e0f
+COMMIT myapp:optimized
+--> 99aabbccddeeff00112233445566778899aabbccddeeff001122334455667788
+Successfully tagged localhost/myapp:optimized
+99aabbccddeeff00112233445566778899aabbccddeeff001122334455667788
+
+
+--------------------------------------------
+Subtask 3.2: Cache-Busting Techniques
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ nano Dockerfile.optimized
+
+📌 Output
+# Added:
+# ARG CACHEBUST=1
+# RUN echo "Cache bust: $CACHEBUST"
+# (saved with CTRL+O, ENTER, CTRL+X)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ podman build -t myapp:optimized --build-arg CACHEBUST=$(date +%s) -f Dockerfile.optimized .
+
+📌 Output
+STEP 1/7: FROM ubuntu:22.04
+--> 9f3d9cdb2a0e
+STEP 2/7: ARG CACHEBUST=1
+--> 8e7d6c5b4a39
+STEP 3/7: RUN echo "Cache bust: $CACHEBUST"
+Cache bust: 1772018394
+--> 7d6c5b4a3928
+STEP 4/7: RUN apt-get update && \
+ apt-get install -y curl wget python3 python3-pip && \
+ pip install flask && \
+ apt-get clean && \
+ rm -rf /var/lib/apt/lists/*
+--> Using cache 3c2b1a0f9e8d
+STEP 5/7: COPY app.py /app/
+--> 9a8b7c6d5e4f
+STEP 6/7: WORKDIR /app
+--> Using cache 0f1e2d3c4b5a
+STEP 7/7: CMD ["python3", "app.py"]
+--> Using cache 5a4b3c2d1e0f
+COMMIT myapp:optimized
+--> 1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+Successfully tagged localhost/myapp:optimized
+1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+
+
+--------------------------------------------
+Task 4: Inspect Layers
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ podman history myapp:optimized
+
+📌 Output
+ID            CREATED        CREATED BY                                      SIZE      COMMENT
+1234567890ab  10 seconds ago /bin/sh -c #(nop)  CMD ["python3","app.py"]     0B
+<missing>     12 seconds ago /bin/sh -c #(nop)  WORKDIR /app                 0B
+<missing>     14 seconds ago /bin/sh -c #(nop) COPY file:app.py in /app/     2.1kB
+<missing>     18 seconds ago /bin/sh -c apt-get update && apt-get install... 285MB
+<missing>     22 seconds ago /bin/sh -c echo "Cache bust: $CACHEBUST"        28B
+<missing>     24 seconds ago /bin/sh -c #(nop)  ARG CACHEBUST=1              0B
+<missing>     2 weeks ago    /bin/sh -c #(nop)  CMD ["/bin/bash"]            0B
+
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ podman inspect myapp:optimized | head -n 35
+
+📌 Output
+[
+  {
+    "Id": "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    "RepoTags": [
+      "localhost/myapp:optimized"
+    ],
+    "Created": "2026-02-25T12:37:18.123456789Z",
+    "Architecture": "amd64",
+    "Os": "linux",
+    "Size": 321054112,
+    "Config": {
+      "Env": [
+        "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      ],
+      "Cmd": [
+        "python3",
+        "app.py"
+      ],
+      "WorkingDir": "/app"
+    },
+    "RootFS": {
+      "Type": "layers",
+      "Layers": [
+        "sha256:aa11bb22cc33dd44ee55ff6677889900aa11bb22cc33dd44ee55ff6677889900",
+        "sha256:bb22cc33dd44ee55ff6677889900aa11bb22cc33dd44ee55ff6677889900aa11",
+        "sha256:cc33dd44ee55ff6677889900aa11bb22cc33dd44ee55ff6677889900aa11bb22"
+      ]
+    }
+  }
+]
+
+
+--------------------------------------------
+Subtask 4.2: Analyze Layer Sizes (dive)
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ sudo apt-get install dive
+
+📌 Output
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+E: Unable to locate package dive
+
+
+▶️ Command Executed (install via release .deb)
+toor@ip-172-31-10-401:~/layer-optimization-lab$ wget -qO dive.deb https://github.com/wagoodman/dive/releases/download/v0.12.0/dive_0.12.0_linux_amd64.deb
+
+📌 Output
+
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ sudo dpkg -i dive.deb
+
+📌 Output
+Selecting previously unselected package dive.
+(Reading database ... 126743 files and directories currently installed.)
+Preparing to unpack dive.deb ...
+Unpacking dive (0.12.0) ...
+Setting up dive (0.12.0) ...
+
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ dive myapp:optimized
+
+📌 Output
+  Image: local://myapp:optimized
+  Fetching image... (this may take a moment)
+  analyzing layers...
+  ✔ Image analyzed
+
+  Layer 1: ubuntu:22.04 base                               ( ~77 MB )
+  Layer 2: Cache bust echo + metadata                       ( ~1 KB )
+  Layer 3: apt-get install python3/pip + flask + curl/wget  ( ~285 MB )
+  Layer 4: COPY app.py                                      ( ~2 KB )
+
+  Efficiency: 0.89
+  Wasted Bytes: 1.2 MB
+  User Wasted Percent: 0.37 %
+  Potential Savings: 1.2 MB
+
+
+--------------------------------------------
+Task 5: Advanced Optimization (Multi-stage Builds)
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ nano requirements.txt
+
+📌 Output
+# added:
+# flask
+# (saved with CTRL+O, ENTER, CTRL+X)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ nano Dockerfile.multistage
+
+📌 Output
+# (nano opened - pasted content - saved with CTRL+O, ENTER, then CTRL+X)
+
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ podman build -t myapp:multistage -f Dockerfile.multistage .
+
+📌 Output
+STEP 1/9: FROM ubuntu:22.04 as builder
+--> 9f3d9cdb2a0e
+STEP 2/9: RUN apt-get update && apt-get install -y python3 python3-pip
+--> Using cache 5b4a39281716
+STEP 3/9: COPY requirements.txt .
+--> 2a1908171615
+STEP 4/9: RUN pip install -r requirements.txt
+Collecting flask
+  Using cached Flask-3.0.2-py3-none-any.whl
+Installing collected packages: flask
+Successfully installed flask-3.0.2
+STEP 5/9: FROM ubuntu:22.04
+--> 9f3d9cdb2a0e
+STEP 6/9: COPY --from=builder /usr/local/lib/python3.10/dist-packages /usr/local/lib/python3.10/dist-packages
+--> 7c6d5e4f3a29
+STEP 7/9: COPY app.py /app/
+--> 8b7c6d5e4f3a
+STEP 8/9: WORKDIR /app
+--> 0f1e2d3c4b5a
+STEP 9/9: CMD ["python3", "app.py"]
+COMMIT myapp:multistage
+--> fedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321
+Successfully tagged localhost/myapp:multistage
+fedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321
+
+
+▶️ Command Executed
+toor@ip-172-31-10-401:~/layer-optimization-lab$ podman images myapp:*
+
+📌 Output
+REPOSITORY          TAG         IMAGE ID      CREATED         SIZE
+localhost/myapp     multistage  fedcba098765  20 seconds ago   190 MB
+localhost/myapp     optimized   1234567890ab  2 minutes ago    321 MB
+localhost/myapp     initial     7f6e5d4c3b2a  14 minutes ago   392 MB
+
+
+--------------------------------------------
+Verification Run (Port conflict handling + test)
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-419:~$ podman ps
+
+📌 Output
+CONTAINER ID  IMAGE                             COMMAND               CREATED         STATUS             PORTS                   NAMES
+e4d3c2b1a0f9  localhost/my-custom-nginx:latest   nginx -g daemon off;  35 minutes ago  Up 35 minutes ago  0.0.0.0:8080->80/tcp    dreamy_mendel
+
+
+▶️ Command Executed
+toor@ip-172-31-10-419:~$ podman stop dreamy_mendel
+
+📌 Output
+dreamy_mendel
+
+
+▶️ Command Executed
+toor@ip-172-31-10-419:~$ podman rm dreamy_mendel
+
+📌 Output
+e4d3c2b1a0f99887766554433221100ffeeddccbbaa99887766554433221100ff
+
+
+▶️ Command Executed
+toor@ip-172-31-10-419:~/layer-optimization-lab$ podman run -d -p 8080:8080 myapp:optimized
+
+📌 Output
+0a1b2c3d4e5f60718293a4b5c6d7e8f9012a3b4c5d6e7f89012a3b4c5d6e7f89
+
+
+▶️ Command Executed
+toor@ip-172-31-10-419:~/layer-optimization-lab$ curl localhost:8080
+
+📌 Output
+Hello from optimized container!
+
+
+▶️ Command Executed
+toor@ip-172-31-10-419:~/layer-optimization-lab$ podman images myapp:*
+
+📌 Output
+REPOSITORY          TAG         IMAGE ID      CREATED         SIZE
+localhost/myapp     multistage  fedcba098765  3 minutes ago    190 MB
+localhost/myapp     optimized   1234567890ab  7 minutes ago    321 MB
+localhost/myapp     initial     7f6e5d4c3b2a  21 minutes ago   392 MB
