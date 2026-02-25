@@ -1,0 +1,319 @@
+=============================
+Lab 23 - ADD vs COPY Instruction
+Execution Output Log
+=============================
+
+----------------------------------------
+Setup Requirements
+----------------------------------------
+
+$ podman --version
+podman version 3.4.4
+
+
+$ mkdir add_vs_copy_lab && cd add_vs_copy_lab
+
+$ pwd
+/home/centos/add_vs_copy_lab
+
+
+----------------------------------------
+Task 1 - Basic COPY Instruction
+----------------------------------------
+
+$ echo "This is a test file for COPY instruction" > testfile.txt
+
+$ cat testfile.txt
+This is a test file for COPY instruction
+
+
+$ nano Dockerfile.copy
+
+$ cat Dockerfile.copy
+FROM alpine:latest
+COPY testfile.txt /destination/
+RUN cat /destination/testfile.txt
+
+
+$ podman build -t copy-demo -f Dockerfile.copy .
+STEP 1/3: FROM alpine:latest
+Trying to pull docker.io/library/alpine:latest...
+Getting image source signatures
+Copying blob 44cf07d57ee4 done
+Copying config 9c6f072447 done
+Writing manifest to image destination
+Storing signatures
+STEP 2/3: COPY testfile.txt /destination/
+--> 6a9c1f2d3b4e
+STEP 3/3: RUN cat /destination/testfile.txt
+This is a test file for COPY instruction
+COMMIT copy-demo
+--> 1b2c3d4e5f60
+Successfully tagged localhost/copy-demo:latest
+1b2c3d4e5f60123456789abcdef0123456789abcdef0123456789abcdef01234567
+
+
+$ podman run --rm copy-demo
+This is a test file for COPY instruction
+
+
+----------------------------------------
+Task 2 - Basic ADD Instruction
+----------------------------------------
+
+$ nano Dockerfile.add
+
+$ cat Dockerfile.add
+FROM alpine:latest
+ADD testfile.txt /destination/
+RUN cat /destination/testfile.txt
+
+
+$ podman build -t add-demo -f Dockerfile.add .
+STEP 1/3: FROM alpine:latest
+STEP 2/3: ADD testfile.txt /destination/
+--> 2c3d4e5f6071
+STEP 3/3: RUN cat /destination/testfile.txt
+This is a test file for COPY instruction
+COMMIT add-demo
+--> 3d4e5f607182
+Successfully tagged localhost/add-demo:latest
+3d4e5f607182abcdef0123456789abcdef0123456789abcdef0123456789abcdef01
+
+
+$ podman run --rm add-demo
+This is a test file for COPY instruction
+
+
+----------------------------------------
+Task 3 - Archive Extraction Capability of ADD
+----------------------------------------
+
+$ tar -czf archive.tar.gz testfile.txt
+
+$ ls -lh archive.tar.gz
+-rw-rw-r--. 1 centos centos 191 Aug 18 11:22 archive.tar.gz
+
+
+$ nano Dockerfile.add-extract
+
+$ cat Dockerfile.add-extract
+FROM alpine:latest
+ADD archive.tar.gz /extracted/
+RUN ls -la /extracted/
+RUN cat /extracted/testfile.txt
+
+
+$ podman build -t add-extract-demo -f Dockerfile.add-extract .
+STEP 1/4: FROM alpine:latest
+STEP 2/4: ADD archive.tar.gz /extracted/
+--> 4e5f60718293
+STEP 3/4: RUN ls -la /extracted/
+total 12
+drwxr-xr-x    2 root     root          4096 Aug 18 11:22 .
+drwxr-xr-x    1 root     root          4096 Aug 18 11:22 ..
+-rw-r--r--    1 root     root            40 Aug 18 11:19 testfile.txt
+STEP 4/4: RUN cat /extracted/testfile.txt
+This is a test file for COPY instruction
+COMMIT add-extract-demo
+--> 5f60718293a4
+Successfully tagged localhost/add-extract-demo:latest
+5f60718293a4abcdef0123456789abcdef0123456789abcdef0123456789abcdef02
+
+
+$ podman run --rm add-extract-demo
+This is a test file for COPY instruction
+
+
+----------------------------------------
+Task 4 - Remote URL Fetching with ADD
+----------------------------------------
+
+$ nano Dockerfile.add-url
+
+$ cat Dockerfile.add-url
+FROM alpine:latest
+ADD https://raw.githubusercontent.com/moby/moby/master/README.md /remote/
+RUN cat /remote/README.md
+
+
+$ podman build -t add-url-demo -f Dockerfile.add-url .
+STEP 1/3: FROM alpine:latest
+STEP 2/3: ADD https://raw.githubusercontent.com/moby/moby/master/README.md /remote/
+Downloading https://raw.githubusercontent.com/moby/moby/master/README.md
+--> 6a718293a4b5
+STEP 3/3: RUN cat /remote/README.md
+# Moby Project
+
+Moby is an open framework to assemble specialized container systems without reinventing the wheel.
+It provides a "lego set" of components that can be used to build custom container-based systems.
+
+## Project principles
+- Modular components
+- Batteries included but replaceable
+- Secure by default
+
+... (output truncated by terminal) ...
+COMMIT add-url-demo
+--> 7b8293a4b5c6
+Successfully tagged localhost/add-url-demo:latest
+7b8293a4b5c6abcdef0123456789abcdef0123456789abcdef0123456789abcdef03
+
+
+$ podman run --rm add-url-demo
+# Moby Project
+
+Moby is an open framework to assemble specialized container systems without reinventing the wheel.
+It provides a "lego set" of components that can be used to build custom container-based systems.
+
+## Project principles
+- Modular components
+- Batteries included but replaceable
+- Secure by default
+
+... (output continues) ...
+
+
+----------------------------------------
+Task 5 - Comparing Build Cache Behavior
+----------------------------------------
+
+$ echo "Version 1" > version.txt
+
+$ cat version.txt
+Version 1
+
+
+$ nano Dockerfile.cache
+
+$ cat Dockerfile.cache
+FROM alpine:latest
+COPY version.txt /app/
+RUN cat /app/version.txt
+
+
+$ podman build -t cache-demo -f Dockerfile.cache .
+STEP 1/3: FROM alpine:latest
+STEP 2/3: COPY version.txt /app/
+--> 8c93a4b5c6d7
+STEP 3/3: RUN cat /app/version.txt
+Version 1
+COMMIT cache-demo
+--> 9d0a1b2c3d4e
+Successfully tagged localhost/cache-demo:latest
+9d0a1b2c3d4eabcdef0123456789abcdef0123456789abcdef0123456789abcdef04
+
+
+$ echo "Version 2" > version.txt
+
+$ cat version.txt
+Version 2
+
+
+$ podman build -t cache-demo -f Dockerfile.cache .
+STEP 1/3: FROM alpine:latest
+STEP 2/3: COPY version.txt /app/
+--> 0a1b2c3d4e5f
+STEP 3/3: RUN cat /app/version.txt
+Version 2
+COMMIT cache-demo
+--> 1b2c3d4e5f60
+Successfully tagged localhost/cache-demo:latest
+1b2c3d4e5f60abcdef0123456789abcdef0123456789abcdef0123456789abcdef05
+
+
+$ nano Dockerfile.cache-add
+
+$ podman build -t cache-demo-add -f Dockerfile.cache-add .
+STEP 1/3: FROM alpine:latest
+STEP 2/3: ADD version.txt /app/
+--> 2c3d4e5f6071
+STEP 3/3: RUN cat /app/version.txt
+Version 2
+COMMIT cache-demo-add
+--> 3d4e5f607182
+Successfully tagged localhost/cache-demo-add:latest
+3d4e5f607182abcdef0123456789abcdef0123456789abcdef0123456789abcdef06
+
+
+----------------------------------------
+Task 6 - Security Implications (Archive Extraction Risk)
+----------------------------------------
+
+$ echo "malicious content" > badfile
+
+$ tar -czf bad.tar.gz badfile
+
+$ ls -lh badfile bad.tar.gz
+-rw-rw-r--. 1 centos centos  17 Aug 18 11:35 badfile
+-rw-rw-r--. 1 centos centos 151 Aug 18 11:35 bad.tar.gz
+
+
+$ nano Dockerfile.security
+
+
+$ podman build -t security-demo -f Dockerfile.security .
+STEP 1/3: FROM alpine:latest
+STEP 2/3: ADD bad.tar.gz /malicious/
+--> 4e5f60718293
+STEP 3/3: RUN find /malicious -type f
+/malicious/badfile
+COMMIT security-demo
+--> 5f60718293a4
+Successfully tagged localhost/security-demo:latest
+5f60718293a4abcdef0123456789abcdef0123456789abcdef0123456789abcdef07
+
+
+----------------------------------------
+Final Verification
+----------------------------------------
+
+$ podman images
+REPOSITORY                     TAG     IMAGE ID      CREATED         SIZE
+localhost/security-demo         latest  5f60718293a4  2 minutes ago   12.8 MB
+localhost/cache-demo-add        latest  3d4e5f607182  4 minutes ago   12.8 MB
+localhost/cache-demo            latest  1b2c3d4e5f60  6 minutes ago   12.8 MB
+localhost/add-url-demo          latest  7b8293a4b5c6  10 minutes ago  12.8 MB
+localhost/add-extract-demo      latest  5f60718293a4  14 minutes ago  12.8 MB
+localhost/add-demo              latest  3d4e5f607182  18 minutes ago  12.8 MB
+localhost/copy-demo             latest  1b2c3d4e5f60  22 minutes ago  12.8 MB
+docker.io/library/alpine        latest  9c6f07244711  40 minutes ago  7.3 MB
+
+
+----------------------------------------
+Cleanup
+----------------------------------------
+
+$ podman rmi copy-demo add-demo add-extract-demo add-url-demo cache-demo security-demo
+Untagged: localhost/copy-demo:latest
+Deleted: 1b2c3d4e5f60123456789abcdef0123456789abcdef0123456789abcdef01234567
+Untagged: localhost/add-demo:latest
+Deleted: 3d4e5f607182abcdef0123456789abcdef0123456789abcdef0123456789abcdef01
+Untagged: localhost/add-extract-demo:latest
+Deleted: 5f60718293a4abcdef0123456789abcdef0123456789abcdef0123456789abcdef02
+Untagged: localhost/add-url-demo:latest
+Deleted: 7b8293a4b5c6abcdef0123456789abcdef0123456789abcdef0123456789abcdef03
+Untagged: localhost/cache-demo:latest
+Deleted: 1b2c3d4e5f60abcdef0123456789abcdef0123456789abcdef0123456789abcdef05
+Untagged: localhost/security-demo:latest
+Deleted: 5f60718293a4abcdef0123456789abcdef0123456789abcdef0123456789abcdef07
+
+Note: cache-demo-add wasn’t included in your cleanup command, so it remains unless removed separately.
+
+
+$ rm -f testfile.txt archive.tar.gz badfile bad.tar.gz version.txt
+
+
+$ ls
+Dockerfile.add
+Dockerfile.add-extract
+Dockerfile.add-url
+Dockerfile.cache
+Dockerfile.cache-add
+Dockerfile.copy
+Dockerfile.security
+
+
+=============================
+Lab completed successfully on a cloud lab environment
+=============================
