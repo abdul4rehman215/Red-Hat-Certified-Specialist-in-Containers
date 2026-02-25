@@ -1,4 +1,4 @@
-# 🛠️ Troubleshooting Guide — Lab 01: Understanding the `FROM` Instruction
+# 🛠️ Troubleshooting Guide — Lab 21: Understanding the `FROM` Instruction
 
 > This file documents issues encountered (or likely to be encountered) during this lab and how to fix them.
 
