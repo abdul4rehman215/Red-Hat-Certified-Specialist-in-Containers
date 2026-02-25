@@ -1,4 +1,4 @@
-# 🐳 Red Hat Certified Specialist in Containers - 📦 Container, Podman & Kubernetes Engineering Portfolio (40 Labs)
+# 🐳 Red Hat Certified Specialist in Containers - 📦 Container, Podman & Kubernetes Engineering Portfolio
 
 > Enterprise-Grade Container Engineering • Platform & DevOps Workflows • Secure Microservice Deployment • Production Kubernetes Orchestration
 
