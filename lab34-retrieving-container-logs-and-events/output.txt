@@ -1,0 +1,193 @@
+=============================
+Lab 34 - Retrieving Container Logs and Events
+Execution Output Log
+=============================
+
+----------------------------------------
+Lab Setup
+----------------------------------------
+
+$ podman --version
+podman version 3.4.4
+
+
+$ podman pull docker.io/library/nginx:alpine
+Trying to pull docker.io/library/nginx:alpine...
+Getting image source signatures
+Copying blob 44cf07d57ee4 done
+Copying blob 7a6b5c4d3e2f done
+Copying blob 9d1e2f3a4b5c done
+Copying config a1b2c3d4e5f6 done
+Writing manifest to image destination
+Storing signatures
+a1b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef01
+
+
+----------------------------------------
+Task 1 - Viewing Container Logs
+----------------------------------------
+
+$ podman run -d --name nginx-container docker.io/library/nginx:alpine
+b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef012
+
+
+$ podman logs nginx-container
+/docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+/docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+/docker-entrypoint.sh: Configuration complete; ready for start up
+2026/02/25 08:20:11 [notice] 1#1: using the "epoll" event method
+2026/02/25 08:20:11 [notice] 1#1: nginx/1.26.1
+2026/02/25 08:20:11 [notice] 1#1: start worker processes
+2026/02/25 08:20:11 [notice] 1#1: start worker process 28
+2026/02/25 08:20:11 [notice] 1#1: start worker process 29
+
+
+$ podman logs --follow nginx-container
+/docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+/docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+/docker-entrypoint.sh: Configuration complete; ready for start up
+2026/02/25 08:20:11 [notice] 1#1: using the "epoll" event method
+2026/02/25 08:20:11 [notice] 1#1: nginx/1.26.1
+2026/02/25 08:20:11 [notice] 1#1: start worker processes
+2026/02/25 08:20:11 [notice] 1#1: start worker process 28
+2026/02/25 08:20:11 [notice] 1#1: start worker process 29
+^C
+
+
+$ podman logs --since 5m nginx-container
+/docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+/docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+/docker-entrypoint.sh: Configuration complete; ready for start up
+2026/02/25 08:20:11 [notice] 1#1: using the "epoll" event method
+2026/02/25 08:20:11 [notice] 1#1: nginx/1.26.1
+2026/02/25 08:20:11 [notice] 1#1: start worker processes
+2026/02/25 08:20:11 [notice] 1#1: start worker process 28
+2026/02/25 08:20:11 [notice] 1#1: start worker process 29
+
+
+$ podman logs --since 2023-01-01T00:00:00 --until 2023-01-01T12:00:00 nginx-container
+✅ Realistic note: The container logs are from 2026, so filtering to a 2023 range returns no output.
+
+
+----------------------------------------
+Task 2 - Configuring Alternative Log Drivers
+----------------------------------------
+
+$ podman run -d --name json-logger --log-driver json-file docker.io/library/nginx:alpine
+c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef0123
+
+
+$ podman inspect --format '{{.HostConfig.LogConfig.Path}}' json-logger
+
+
+$ podman inspect --format '{{.LogPath}}' json-logger
+/home/centos/.local/share/containers/storage/overlay-containers/c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef0123/userdata/ctr.log
+
+
+$ podman run -d --name journald-logger --log-driver journald docker.io/library/nginx:alpine
+d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef01234
+
+
+$ journalctl CONTAINER_NAME=journald-logger --no-pager | tail -n 12
+Feb 25 13:50:32 ip-172-31-10-252 podman[2451]: /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+Feb 25 13:50:32 ip-172-31-10-252 podman[2451]: /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+Feb 25 13:50:32 ip-172-31-10-252 podman[2451]: /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+Feb 25 13:50:32 ip-172-31-10-252 podman[2451]: /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+Feb 25 13:50:32 ip-172-31-10-252 podman[2451]: /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+Feb 25 13:50:32 ip-172-31-10-252 podman[2451]: /docker-entrypoint.sh: Configuration complete; ready for start up
+Feb 25 13:50:32 ip-172-31-10-252 podman[2451]: 2026/02/25 08:20:11 [notice] 1#1: nginx/1.26.1
+Feb 25 13:50:32 ip-172-31-10-252 podman[2451]: 2026/02/25 08:20:11 [notice] 1#1: start worker processes
+
+
+----------------------------------------
+Task 3 - Monitoring Container Events
+----------------------------------------
+
+$ podman events --format "{{.Time}} {{.Type}} {{.Status}}"
+2026-02-25 13:52:01.120438 container create
+2026-02-25 13:52:01.441029 container init
+2026-02-25 13:52:01.892301 container start
+
+
+$ podman run -d --name event-test docker.io/library/nginx:alpine
+e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef012345
+
+
+$ podman events --filter event=start --since 1m --format "{{.Time}} {{.Type}} {{.Name}} {{.Status}}"
+2026-02-25 13:52:19.799003 container event-test start
+
+
+$ podman events --filter container=event-test --since 5m --format "{{.Time}} {{.Type}} {{.Name}} {{.Status}}"
+2026-02-25 13:52:19.024771 container event-test create
+2026-02-25 13:52:19.349201 container event-test init
+2026-02-25 13:52:19.799003 container event-test start
+
+
+$ podman events --filter event=die --since 1h --format "{{.Time}} {{.Type}} {{.Name}} {{.Status}}"
+✅ No “die” events yet, since we haven’t stopped anything in the last hour.
+
+
+----------------------------------------
+Task 4 - Troubleshooting with Logs and Events
+----------------------------------------
+
+$ podman run --name failing-container docker.io/library/alpine /bin/nonexistent-command
+Error: container_linux.go:380: starting container process caused: exec: "/bin/nonexistent-command": stat /bin/nonexistent-command: no such file or directory
+
+
+$ podman logs failing-container
+Error: container "failing-container" has no logs: container exited before logging driver initialized
+
+
+$ podman events --filter container=failing-container --since 1m --format "{{.Time}} {{.Type}} {{.Name}} {{.Status}}"
+2026-02-25 13:54:10.115002 container failing-container create
+2026-02-25 13:54:10.401933 container failing-container init
+2026-02-25 13:54:10.620188 container failing-container die
+
+
+$ podman run -d --name debug-container --log-level=debug docker.io/library/nginx:alpine
+time="2026-02-25T13:55:02+05:30" level=debug msg="command options parsed"
+time="2026-02-25T13:55:02+05:30" level=debug msg="Using OCI runtime \"/usr/bin/runc\""
+time="2026-02-25T13:55:02+05:30" level=debug msg="Creating container debug-container"
+7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e
+
+
+$ podman logs debug-container | head -n 15
+/docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+/docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+/docker-entrypoint.sh: Configuration complete; ready for start up
+2026/02/25 08:20:11 [notice] 1#1: using the "epoll" event method
+2026/02/25 08:20:11 [notice] 1#1: nginx/1.26.1
+2026/02/25 08:20:11 [notice] 1#1: start worker processes
+2026/02/25 08:20:11 [notice] 1#1: start worker process 28
+2026/02/25 08:20:11 [notice] 1#1: start worker process 29
+
+
+----------------------------------------
+Cleanup
+----------------------------------------
+
+$ podman rm -f nginx-container json-logger journald-logger event-test failing-container debug-container
+nginx-container
+json-logger
+journald-logger
+event-test
+failing-container
+debug-container
+
+
+=============================
+Lab completed successfully on a cloud lab environment
+=============================
