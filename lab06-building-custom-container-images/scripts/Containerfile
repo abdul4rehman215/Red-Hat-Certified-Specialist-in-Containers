@@ -1,0 +1,11 @@
+# Use the official Nginx base image
+FROM docker.io/nginx:alpine
+
+# Set an environment variable
+ENV AUTHOR="OpenShift Developer"
+
+# Copy the custom HTML file to the Nginx web root
+COPY index.html /usr/share/nginx/html
+
+# Run a command to print a message (for demonstration)
+RUN echo "Container built by $AUTHOR" > /build-info.txt
