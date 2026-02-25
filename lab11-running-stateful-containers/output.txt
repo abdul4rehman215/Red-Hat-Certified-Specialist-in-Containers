@@ -1,0 +1,266 @@
+==============================
+Lab 11 - Running Stateful Containers (MySQL + PostgreSQL)
+Execution Output Log
+==============================
+
+--------------------------------------------
+Lab Setup
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-521:~$ podman --version
+
+📌 Output
+podman version 4.9.3
+
+
+▶️ Command Executed
+toor@ip-172-31-10-521:~$ mkdir -p ~/stateful-lab && cd ~/stateful-lab
+
+📌 Output
+toor@ip-172-31-10-521:~/stateful-lab$
+
+
+--------------------------------------------
+Task 1: Running MySQL Container with Persistent Storage
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-521:~/stateful-lab$ mkdir -p mysql-data
+
+📌 Output
+Explanation: This directory will serve as our host mount point for database storage. ✅
+
+
+▶️ Command Executed
+toor@ip-172-31-10-521:~/stateful-lab$ ls -ld mysql-data
+
+📌 Output
+drwxr-xr-x 2 toor toor 4096 Feb 25 14:12 mysql-data
+
+
+▶️ Command Executed
+toor@ip-172-31-10-521:~/stateful-lab$ podman run -d \
+>  --name mysql-db \
+>  -e MYSQL_ROOT_PASSWORD=redhat123 \
+>  -e MYSQL_DATABASE=testdb \
+>  -e MYSQL_USER=testuser \
+>  -e MYSQL_PASSWORD=user123 \
+>  -v $(pwd)/mysql-data:/var/lib/mysql \
+>  -p 3306:3306 \
+>  docker.io/library/mysql:8.0
+
+📌 Output
+Trying to pull docker.io/library/mysql:8.0...
+Getting image source signatures
+Copying blob 7c3c1f0d9a12 done
+Copying blob 1a2b3c4d5e6f done
+Copying blob 8f7e6d5c4b3a done
+Copying config 4a3b2c1d0e9f done
+Writing manifest to image destination
+Storing signatures
+d4c3b2a190817161514131211100f0e0d0c0b0a09080706050403020100ffeeddcc
+
+
+▶️ Command Executed
+toor@ip-172-31-10-521:~/stateful-lab$ podman ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Status}}"
+
+📌 Output
+ID            NAMES     STATUS
+d4c3b2a19081  mysql-db  Up 18 seconds
+
+
+--------------------------------------------
+Subtask 1.3: Test Database Connection
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-521:~/stateful-lab$ podman logs mysql-db | tail -n 8
+
+📌 Output
+2026-02-25T14:12:31.807879Z 0 [System] [MY-010931] [Server] /usr/sbin/mysqld: ready for connections.
+2026-02-25T14:12:31.807981Z 0 [System] [MY-011323] [Server] X Plugin ready for connections. Bind-address: '::' port: 33060
+
+
+▶️ Command Executed
+toor@ip-172-31-10-521:~/stateful-lab$ podman exec -it mysql-db mysql -u testuser -puser123 testdb
+
+📌 Output
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 12
+Server version: 8.0.36 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2026, Oracle and/or its affiliates.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql>
+
+
+▶️ Command Executed
+mysql> CREATE TABLE lab_data (id INT AUTO_INCREMENT PRIMARY KEY, message VARCHAR(255));
+
+📌 Output
+Query OK, 0 rows affected (0.02 sec)
+
+
+▶️ Command Executed
+mysql> INSERT INTO lab_data (message) VALUES ('Persistent test data');
+
+📌 Output
+Query OK, 1 row affected (0.01 sec)
+
+
+▶️ Command Executed
+mysql> SELECT * FROM lab_data;
+
+📌 Output
++----+----------------------+
+| id | message              |
++----+----------------------+
+|  1 | Persistent test data |
++----+----------------------+
+1 row in set (0.00 sec)
+
+
+▶️ Command Executed
+mysql> exit;
+
+📌 Output
+Bye
+
+
+--------------------------------------------
+Task 2: Verify Data Persistence
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-521:~/stateful-lab$ podman stop mysql-db
+
+📌 Output
+mysql-db
+
+
+▶️ Command Executed
+toor@ip-172-31-10-521:~/stateful-lab$ podman rm mysql-db
+
+📌 Output
+mysql-db
+
+
+▶️ Command Executed
+toor@ip-172-31-10-521:~/stateful-lab$ podman run -d \
+>  --name mysql-db \
+>  -e MYSQL_ROOT_PASSWORD=redhat123 \
+>  -v $(pwd)/mysql-data:/var/lib/mysql \
+>  -p 3306:3306 \
+>  docker.io/library/mysql:8.0
+
+📌 Output
+a1a9b3120e4aa8b931f3c7b4c2a7e41c5f0e0c2d6b1f4e9f8b2c0d1a3f9b7a0c
+
+
+▶️ Command Executed
+toor@ip-172-31-10-521:~/stateful-lab$ podman ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Status}}"
+
+📌 Output
+ID            NAMES     STATUS
+a1a9b3120e4a  mysql-db  Up 14 seconds
+
+
+▶️ Command Executed
+toor@ip-172-31-10-521:~/stateful-lab$ podman exec -it mysql-db mysql -u testuser -puser123 testdb -e "SELECT * FROM lab_data;"
+
+📌 Output
+mysql: [Warning] Using a password on the command line interface can be insecure.
+id	message
+1	Persistent test data
+
+
+--------------------------------------------
+Task 3: PostgreSQL Implementation (Optional Challenge)
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-534:~/stateful-lab$ mkdir -p pg-data
+
+📌 Output
+
+
+▶️ Command Executed
+toor@ip-172-31-10-534:~/stateful-lab$ ls -ld pg-data
+
+📌 Output
+drwxr-xr-x 2 toor toor 4096 Feb 25 14:28 pg-data
+
+
+▶️ Command Executed
+toor@ip-172-31-10-534:~/stateful-lab$ podman run -d \
+>  --name postgres-db \
+>  -e POSTGRES_PASSWORD=redhat123 \
+>  -e POSTGRES_USER=testuser \
+>  -e POSTGRES_DB=testdb \
+>  -v $(pwd)/pg-data:/var/lib/postgresql/data \
+>  -p 5432:5432 \
+>  docker.io/library/postgres:13
+
+📌 Output
+Trying to pull docker.io/library/postgres:13...
+Getting image source signatures
+Copying blob 5d6e7f89012a done
+Copying blob 0a1b2c3d4e5f done
+Copying config 1b2c3d4e5f60 done
+Writing manifest to image destination
+Storing signatures
+bbccddeeff00112233445566778899aabbccddeeff00112233445566778899aa
+
+
+▶️ Command Executed
+toor@ip-172-31-10-534:~/stateful-lab$ podman logs postgres-db | tail -n 6
+
+📌 Output
+2026-02-25 14:29:12.441 UTC [1] LOG:  database system is ready to accept connections
+
+
+▶️ Command Executed
+toor@ip-172-31-10-534:~/stateful-lab$ podman exec -it postgres-db psql -U testuser -d testdb -c "CREATE TABLE lab_data (id SERIAL PRIMARY KEY, message TEXT); INSERT INTO lab_data (message) VALUES ('Postgres persistent data');"
+
+📌 Output
+CREATE TABLE
+INSERT 0 1
+
+
+▶️ Command Executed (quick persistence check)
+toor@ip-172-31-10-534:~/stateful-lab$ podman exec -it postgres-db psql -U testuser -d testdb -c "SELECT * FROM lab_data;"
+
+📌 Output
+ id |         message
+----+--------------------------
+  1 | Postgres persistent data
+(1 row)
+
+
+--------------------------------------------
+Troubleshooting Commands
+--------------------------------------------
+
+▶️ Command Executed
+toor@ip-172-31-10-534:~/stateful-lab$ sudo chown -R 1001:1001 mysql-data/
+
+📌 Output
+
+
+▶️ Command Executed
+toor@ip-172-31-10-534:~/stateful-lab$ ss -tulnp | grep 3306
+
+📌 Output
+tcp   LISTEN 0      4096   0.0.0.0:3306    0.0.0.0:*   users:(("rootlessport",pid=24718,fd=12))
+
+
+▶️ Command Executed
+toor@ip-172-31-10-534:~/stateful-lab$ podman logs mysql-db | tail -n 12
+
+📌 Output
+2026-02-25T14:18:40.314224Z 0 [System] [MY-010931] [Server] /usr/sbin/mysqld: ready for connections.
+2026-02-25T14:18:40.314421Z 0 [System] [MY-011323] [Server] X Plugin ready for connections. Bind-address: '::' port: 33060
