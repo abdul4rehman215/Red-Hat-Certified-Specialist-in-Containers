@@ -543,7 +543,7 @@ Red-Hat-Certified-Specialist-in-Containers/
 ```
 
 
-## 🧱 Standard Lab Structure
+## 🧱 Standard Lab folder Structure
 
 Each lab follows a consistent professional structure:
 
