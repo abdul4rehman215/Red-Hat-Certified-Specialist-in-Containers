@@ -1,0 +1,132 @@
+# =====================================================
+# OS / Editor Junk
+# =====================================================
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# =====================================================
+# Logs & Temporary Files
+# (Keeps intentional output.txt if versioned)
+# =====================================================
+*.log
+*.out
+*.tmp
+*.temp
+*.bak
+*.old
+*.orig
+*.pid
+
+# =====================================================
+# Python (Flask / scripting labs)
+# =====================================================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+.venv/
+venv/
+pip-wheel-metadata/
+*.egg-info/
+.ipynb_checkpoints/
+
+# Environment files (DO NOT COMMIT)
+.env
+.env.*
+.envrc
+**/.env
+
+# =====================================================
+# Node / JavaScript (Debug Labs)
+# =====================================================
+node_modules/
+npm-debug.log*
+yarn.lock
+package-lock.json
+
+# =====================================================
+# Container / Image Artifacts
+# =====================================================
+*.tar
+*.tar.gz
+*.tgz
+*.img
+
+# =====================================================
+# Database Dumps & Local Data
+# (Commit only if intentionally versioned)
+# =====================================================
+*.sql
+*.dump
+
+# Local DB / volume directories
+mysql-data/
+pg-data/
+postgres-data/
+pgdata/
+redis-data/
+container_data/
+restricted_data/
+host_data/
+nginx-content/
+
+# =====================================================
+# Kubernetes Local Artifacts
+# =====================================================
+.kube/
+*.kubeconfig
+k8s-deployment.yaml  # if auto-generated
+
+# =====================================================
+# Compose Override Files (Optional Local Overrides)
+# =====================================================
+docker-compose.override.yml
+podman-compose.override.yml
+
+# =====================================================
+# Secrets / Credentials (DO NOT COMMIT)
+# =====================================================
+*password*
+*secret*
+*.secret
+secrets/
+private/
+credentials*
+db_password.txt
+id_rsa
+id_rsa.pub
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.csr
+keyparams
+
+# =====================================================
+# Local Build / Installer Files
+# =====================================================
+*.deb
+*.rpm
+
+# =====================================================
+# Build Artifacts
+# =====================================================
+dist/
+build/
+reports/
+output/
+exports/
+
+# =====================================================
+# Container Log Folders (if created during labs)
+# =====================================================
+container-logs/
